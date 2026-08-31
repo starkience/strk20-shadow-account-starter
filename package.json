@@ -1,0 +1,43 @@
+{
+  "name": "strk20-shadow-account-starter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A small, verified STRK20 shadow-account starter for Starknet Sepolia.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "postinstall": "pnpm exec tsc -p vendor/privacy-sdk/tsconfig.build.json",
+    "dev": "node --env-file-if-exists=.env --import tsx scripts/server.ts",
+    "build": "tsc --noEmit",
+    "start": "node --env-file-if-exists=.env --import tsx scripts/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "pnpm typecheck && pnpm test",
+    "shadow:doctor": "node --env-file-if-exists=.env --import tsx scripts/doctor.ts",
+    "shadow:shield": "node --env-file-if-exists=.env --import tsx scripts/shield.ts",
+    "shadow:invoke": "node --env-file-if-exists=.env --import tsx scripts/invoke.ts",
+    "shadow:demo": "node --env-file-if-exists=.env --import tsx scripts/demo.ts"
+  },
+  "dependencies": {
+    "@starkware-libs/starknet-privacy-sdk": "file:vendor/privacy-sdk",
+    "@starknet-io/starknet-types-0101": "npm:@starknet-io/types-js@0.10.3",
+    "hpke": "1.0.6",
+    "ohttp-ts": "0.3.0",
+    "starknet": "10.5.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "hpke": "1.0.6"
+    }
+  }
+}

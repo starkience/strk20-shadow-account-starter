@@ -1,0 +1,13 @@
+{
+  "network": "starknet-sepolia",
+  "checkedAt": "2026-08-31",
+  "node": ">=24",
+  "privacySdk": "0.14.3-rc.5",
+  "starknetJs": "10.5.0",
+  "poolAddress": "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91",
+  "strkTokenAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+  "shadowAccountAnonymizerAddress": "0x020b9f80cba4bda1f2edbbc8cab85d9a132559f7bdef9635f16af32d95b5afde",
+  "anonymizerSourceCommit": "f8f5c6d",
+  "knownCompatibilityIssue": "https://github.com/starkware-libs/starknet-privacy/issues/978",
+  "notes": "The pinned live anonymizer predates the invoke return-shape change that is incompatible with the current Sepolia pool. Re-run pnpm shadow:doctor before changing any address or version."
+}

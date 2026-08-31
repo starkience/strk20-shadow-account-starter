@@ -1,0 +1,35 @@
+{
+  "name": "@starkware-libs/starknet-privacy-sdk",
+  "version": "0.14.3-rc.5",
+  "description": "TypeScript SDK for private transfers on Starknet — deposit, transfer, withdraw, and discover notes via a fluent builder API",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/starkware-libs/starknet-privacy.git",
+    "directory": "sdk"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "starknet",
+    "sdk",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@starknet-io/starknet-types-0101": "npm:@starknet-io/types-js@~0.10.2",
+    "ohttp-ts": "^0.3.0",
+    "starknet": "10.5.0",
+    "zod": "^3.24.0"
+  }
+}

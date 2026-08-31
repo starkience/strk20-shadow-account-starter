@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A verified STRK20 shadow-account starter for Starknet Sepolia" />
+    <title>STRK20 Shadow Account Starter</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <nav class="nav shell">
+      <div class="wordmark"><span class="mark">S/</span> SHADOW KIT</div>
+      <div class="network"><span class="live-dot"></span> STARKNET SEPOLIA</div>
+    </nav>
+
+    <main>
+      <section class="hero shell">
+        <div class="eyebrow reveal">STRK20 · EXPERIMENTAL DEVELOPER STARTER</div>
+        <h1 class="reveal delay-1">Let the action speak.<span>Leave the root account behind.</span></h1>
+        <p class="lede reveal delay-2">Run a real contract call through an app-scoped Starknet shadow account, relay it privately, and verify every important post-condition.</p>
+      </section>
+
+      <section class="workbench shell reveal delay-3">
+        <article class="console-card">
+          <header class="card-header">
+            <div><span class="label">LIVE RECIPE</span><h2>Shadow transfer</h2></div>
+            <span id="status" class="status status-idle">idle</span>
+          </header>
+
+          <div class="route" aria-label="Transaction route">
+            <div class="node muted-node"><small>ROOT</small><strong>hidden</strong></div>
+            <div class="connector"><span></span></div>
+            <div class="node shadow-node"><small>CALLER</small><strong id="route-shadow">shadow/0</strong></div>
+            <div class="connector"><span></span></div>
+            <div class="node"><small>ACTION</small><strong>STRK transfer</strong></div>
+          </div>
+
+          <dl class="facts">
+            <div><dt>App scope</dt><dd id="app-name">loading…</dd></div>
+            <div><dt>Anonymizer</dt><dd id="anonymizer">loading…</dd></div>
+            <div><dt>Submission</dt><dd>private paymaster</dd></div>
+          </dl>
+
+          <div id="operation" class="operation-state hidden" role="status">
+            <span class="spinner"></span><div><small>WORKING</small><strong id="operation-copy">Discovering private notes</strong></div>
+          </div>
+          <div id="result" class="result-panel hidden">
+            <span class="result-mark">✓</span><div><small>VERIFIED ONCHAIN</small><strong id="result-address"></strong><a id="result-link" target="_blank" rel="noreferrer">Open transaction ↗</a></div>
+          </div>
+          <div id="error" class="error-panel hidden"><strong>Could not complete the recipe.</strong><span id="error-copy"></span></div>
+
+          <button id="invoke" class="primary" disabled><span>Run verified transfer</span><b aria-hidden="true">↗</b></button>
+          <p id="setup-note" class="setup-note">Complete <code>.env</code>, then restart this server.</p>
+        </article>
+
+        <aside class="code-card">
+          <div class="code-top"><span>lib/shadow.ts</span><span>8 lines</span></div>
+          <pre><code>const shadow = createShadowAccount({
+  onProgress: console.log,
+});
+
+await shadow.invoke({
+  calls: [transferCall],
+  fundingAmount: 0n,
+});</code></pre>
+          <div class="code-caption"><span>01</span><p>The starter hides discovery, maturity, commitments, proving, fees, relay submission, and verification.</p></div>
+        </aside>
+      </section>
+
+      <section class="proof-strip shell">
+        <div class="section-index">02 / WHAT GETS CHECKED</div>
+        <div class="proof-grid">
+          <article><span>01</span><h3>Caller</h3><p>The deployed account matches the derived commitment.</p></article>
+          <article><span>02</span><h3>Effect</h3><p>The recipient balance changes by the exact requested amount.</p></article>
+          <article><span>03</span><h3>Relay</h3><p>The outer transaction sender is not the root account.</p></article>
+          <article><span>04</span><h3>Receipt</h3><p>Deployment event, class hash, and registry agree.</p></article>
+        </div>
+      </section>
+
+      <section class="visibility shell">
+        <div><span class="label">PRIVACY, PLAINLY</span><h2>Private middle.<br />Public edges.</h2></div>
+        <div class="visibility-copy">
+          <p><strong>Hidden:</strong> which private notes funded the call and the root account as contract caller or transaction sender.</p>
+          <p><strong>Visible:</strong> shielding and withdrawal edges, the recipient, transferred amount, shadow address, app call, and timing.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell"><span>SDK STARTER · DEDICATED DEVELOPMENT ACCOUNTS ONLY</span><a href="https://github.com/starkware-libs/starknet-privacy" target="_blank" rel="noreferrer">StarkWare privacy protocol ↗</a></footer>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+name: sepolia e2e
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 7 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    if: ${{ vars.ENABLE_SEPOLIA_E2E == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.0
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm shadow:doctor
+        env:
+          ACCOUNT_ADDRESS: ${{ secrets.SEPOLIA_ACCOUNT_ADDRESS }}
+          ACCOUNT_PRIVATE_KEY: ${{ secrets.SEPOLIA_ACCOUNT_PRIVATE_KEY }}
+          VIEWING_KEY: ${{ secrets.SEPOLIA_VIEWING_KEY }}
+          RECIPIENT_ADDRESS: ${{ secrets.SEPOLIA_RECIPIENT_ADDRESS }}
+          AVNU_PAYMASTER_API_KEY: ${{ secrets.AVNU_PAYMASTER_API_KEY }}
+      - run: pnpm shadow:demo
+        env:
+          ACCOUNT_ADDRESS: ${{ secrets.SEPOLIA_ACCOUNT_ADDRESS }}
+          ACCOUNT_PRIVATE_KEY: ${{ secrets.SEPOLIA_ACCOUNT_PRIVATE_KEY }}
+          VIEWING_KEY: ${{ secrets.SEPOLIA_VIEWING_KEY }}
+          RECIPIENT_ADDRESS: ${{ secrets.SEPOLIA_RECIPIENT_ADDRESS }}
+          AVNU_PAYMASTER_API_KEY: ${{ secrets.AVNU_PAYMASTER_API_KEY }}
