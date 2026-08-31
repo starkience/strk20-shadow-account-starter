@@ -23,7 +23,7 @@
     "shadow:demo": "node --env-file-if-exists=.env --import tsx scripts/demo.ts"
   },
   "dependencies": {
-    "@starkware-libs/starknet-privacy-sdk": "file:vendor/privacy-sdk",
+    "@starkware-libs/starknet-privacy-sdk": "link:vendor/privacy-sdk",
     "@starknet-io/starknet-types-0101": "npm:@starknet-io/types-js@0.10.3",
     "hpke": "1.0.6",
     "ohttp-ts": "0.3.0",
