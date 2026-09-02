@@ -40,6 +40,10 @@ CASM JSON SHA-256   394544ef239c28ea87e6b06a0fa1fc594e9aa10624007cab240a70b5d276
 CASM class hash     0x07d721b4aab6ff1d678d56a8b826f43d23076e096ab9c8c3271d0768afaefb46
 ```
 
+That lockfile pins the replaceability and role implementation from
+`starkware-starknet-utils` commit
+`3e2fd53d99e16c87f6cf2ced53b8c842a2d54a18`.
+
 The Sierra and CASM class hashes match the Sepolia declaration transaction
 `0x0850f55711fbc008bc646452a475ca5d582bdc16e8cc82210645107d9e921bc`
 at block `14169754`.
@@ -91,14 +95,23 @@ Alternatively, set `SEPOLIA_ACCOUNT_ADDRESS` and
 `deploy finalized anonymizer` workflow. Never paste either value into an issue,
 pull request, workflow input, or chat.
 
-If deployment succeeds but finalization is interrupted, rerun against the
-printed address:
+If deployment succeeds but finalization is interrupted, rerun the command. It
+recomputes the UDC address from the exact salt, class, constructor, and
+governance account, detects the existing instance, and resumes finalization.
+You may also provide the printed address as an extra guard:
 
 ```bash
 # Add ANONYMIZER_ADDRESS=<printed address> to the ignored .env file.
 pnpm anonymizer:deploy
 ```
 
-The account becomes the governance admin only long enough to finalize the same
-verified class. Once the `ImplementationFinalized` event is emitted, the
-replaceability component rejects future class changes.
+The supplied address must match that deterministic calculation. A rerun also
+detects an existing `ImplementationFinalized` event and exits without sending
+another transaction.
+
+The deploying account is constructor-bound as the governance admin. The
+finalization transaction atomically grants that account the pinned
+`UpgradeGovernor` role, finalizes the same verified implementation, and removes
+the temporary upgrade role. The governance role remains recorded, but once the
+`ImplementationFinalized` event is emitted the replaceability component rejects
+future class changes regardless of that role.
