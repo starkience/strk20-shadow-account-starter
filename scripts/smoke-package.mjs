@@ -16,6 +16,9 @@ delete environment.NODE_AUTH_TOKEN;
 delete environment.NPM_TOKEN;
 delete environment.GITHUB_TOKEN;
 delete environment.GH_TOKEN;
+delete environment.NPM_CONFIG_USERCONFIG;
+delete environment.npm_config_userconfig;
+environment.NPM_CONFIG_REGISTRY = "https://registry.npmjs.org/";
 
 try {
   execFileSync("pnpm", ["pack", "--pack-destination", temporaryProject], {
@@ -51,7 +54,7 @@ try {
     join(temporaryProject, "package.json"),
     JSON.stringify({ name: "shadow-package-consumer", private: true, type: "module" }),
   );
-  execFileSync("pnpm", ["add", "--offline", "--ignore-scripts", archive], {
+  execFileSync("pnpm", ["add", "--ignore-scripts", archive], {
     cwd: temporaryProject,
     env: environment,
     stdio: "pipe",
@@ -102,7 +105,9 @@ try {
     { cwd: temporaryProject, env: environment, stdio: "pipe" },
   );
 
-  console.log("Packed artifact installs offline and exposes its runtime and type entrypoints.");
+  console.log(
+    "Packed artifact installs without private-registry credentials and exposes its runtime and type entrypoints.",
+  );
 } finally {
   rmSync(temporaryProject, { recursive: true, force: true });
 }
