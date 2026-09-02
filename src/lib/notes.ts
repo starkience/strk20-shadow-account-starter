@@ -1,4 +1,4 @@
-import type { Note } from "@starkware-libs/starknet-privacy-sdk";
+import type { Note } from "../vendor-sdk.js";
 
 export interface NoteSelection {
   readonly notes: readonly Note[];

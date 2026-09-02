@@ -1,9 +1,9 @@
 import { ec, shortString } from "starknet";
-import { parseUnits } from "./amounts";
-import { SEPOLIA, STRK_DECIMALS } from "./constants";
-import { deriveDevelopmentViewingKey } from "./viewing-key";
+import { parseUnits } from "./amounts.js";
+import { SEPOLIA, STRK_DECIMALS } from "./constants.js";
+import { deriveDevelopmentViewingKey } from "./viewing-key.js";
 
-export interface ShadowConfig {
+export interface ShadowRuntimeConfig {
   readonly accountAddress: string;
   readonly accountPrivateKey: string;
   readonly viewingKey: bigint;
@@ -17,10 +17,14 @@ export interface ShadowConfig {
   readonly paymasterApiKey: string;
   readonly appName: string;
   readonly nonce: bigint;
+  readonly maxPaymasterFee: bigint;
+}
+
+/** Configuration used only by the included shield-and-transfer recipe. */
+export interface ShadowConfig extends ShadowRuntimeConfig {
   readonly recipientAddress: string;
   readonly spendAmount: bigint;
   readonly shieldAmount: bigint;
-  readonly maxPaymasterFee: bigint;
 }
 
 export interface PublicShadowConfig {
@@ -89,7 +93,7 @@ export function loadPublicConfig(): PublicShadowConfig {
   };
 }
 
-export function loadShadowConfig(): ShadowConfig {
+export function loadRuntimeConfig(): ShadowRuntimeConfig {
   const publicConfig = loadPublicConfig();
   const accountPrivateKey = required("ACCOUNT_PRIVATE_KEY");
   const accountAddress = address("ACCOUNT_ADDRESS");
@@ -100,28 +104,35 @@ export function loadShadowConfig(): ShadowConfig {
   if (viewingKey <= 0n || viewingKey >= (ec.starkCurve.CURVE.n >> 1n)) {
     throw new Error("VIEWING_KEY is outside the SDK's accepted range");
   }
-  const spendAmount = parseUnits(value("SPEND_AMOUNT_STRK", "0.01"), STRK_DECIMALS);
-  const shieldAmount = parseUnits(value("SHIELD_AMOUNT_STRK", "5"), STRK_DECIMALS);
   const maxPaymasterFee = parseUnits(
     value("MAX_PAYMASTER_FEE_STRK", "5"),
     STRK_DECIMALS,
   );
-  if (spendAmount <= 0n) throw new Error("SPEND_AMOUNT_STRK must be positive");
-  if (shieldAmount <= 0n) throw new Error("SHIELD_AMOUNT_STRK must be positive");
-  const recipientAddress = address("RECIPIENT_ADDRESS");
-  if (BigInt(recipientAddress) === BigInt(accountAddress)) {
-    throw new Error("RECIPIENT_ADDRESS must differ from ACCOUNT_ADDRESS to avoid a direct public link");
-  }
-
   return {
     ...publicConfig,
     accountAddress,
     accountPrivateKey,
     viewingKey,
     paymasterApiKey: required("AVNU_PAYMASTER_API_KEY"),
+    maxPaymasterFee,
+  };
+}
+
+export function loadShadowConfig(): ShadowConfig {
+  const runtimeConfig = loadRuntimeConfig();
+  const spendAmount = parseUnits(value("SPEND_AMOUNT_STRK", "0.01"), STRK_DECIMALS);
+  const shieldAmount = parseUnits(value("SHIELD_AMOUNT_STRK", "5"), STRK_DECIMALS);
+  if (spendAmount <= 0n) throw new Error("SPEND_AMOUNT_STRK must be positive");
+  if (shieldAmount <= 0n) throw new Error("SHIELD_AMOUNT_STRK must be positive");
+  const recipientAddress = address("RECIPIENT_ADDRESS");
+  if (BigInt(recipientAddress) === BigInt(runtimeConfig.accountAddress)) {
+    throw new Error("RECIPIENT_ADDRESS must differ from ACCOUNT_ADDRESS to avoid a direct public link");
+  }
+
+  return {
+    ...runtimeConfig,
     recipientAddress,
     spendAmount,
     shieldAmount,
-    maxPaymasterFee,
   };
 }

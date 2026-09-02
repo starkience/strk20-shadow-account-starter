@@ -1,12 +1,12 @@
 import {
   IndexerDiscoveryProvider,
   createPrivateTransfers,
-} from "@starkware-libs/starknet-privacy-sdk";
+} from "../vendor-sdk.js";
 import { Account, RpcProvider } from "starknet";
-import type { ShadowConfig } from "./config";
-import { SEPOLIA } from "./constants";
+import type { ShadowRuntimeConfig } from "./config.js";
+import { SEPOLIA } from "./constants.js";
 
-export function createSdkContext(config: ShadowConfig) {
+export function createSdkContext(config: ShadowRuntimeConfig) {
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
   const account = new Account({
     provider,

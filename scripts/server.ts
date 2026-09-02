@@ -1,6 +1,7 @@
 import { createReadStream } from "node:fs";
 import { createServer, type ServerResponse } from "node:http";
 import { resolve } from "node:path";
+import { toPublicInvocationError } from "../src/lib/api-error";
 import { loadPublicConfig, loadShadowConfig } from "../src/lib/config";
 import { invokeShadowTransfer } from "../src/lib/invoke-shadow";
 
@@ -48,10 +49,9 @@ const server = createServer(async (request, response) => {
         const result = await invokeShadowTransfer(loadShadowConfig());
         return json(response, 200, { ok: true, result });
       } catch (error) {
-        const secret = process.env.ACCOUNT_PRIVATE_KEY ?? "";
-        const raw = error instanceof Error ? error.message : "The invocation failed";
-        const safe = secret ? raw.replaceAll(secret, "[redacted]") : raw;
-        return json(response, 500, { ok: false, error: safe });
+        const publicError = toPublicInvocationError(error);
+        console.error(`Shadow invocation failed (${publicError.code})`);
+        return json(response, 500, { ok: false, error: publicError });
       } finally {
         active = false;
       }
@@ -66,7 +66,8 @@ const server = createServer(async (request, response) => {
 
     json(response, 404, { error: "Not found" });
   } catch (error) {
-    json(response, 500, { error: error instanceof Error ? error.message : "Server error" });
+    console.error(`Workbench request failed (${error instanceof Error ? error.name : "unknown"})`);
+    json(response, 500, { error: "Workbench request failed. Check the trusted server." });
   }
 });
 

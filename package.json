@@ -4,26 +4,48 @@
   "private": true,
   "description": "A small, verified STRK20 shadow-account starter for Starknet Sepolia.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/starkience/strk20-shadow-account-starter.git"
+  },
+  "bugs": "https://github.com/starkience/strk20-shadow-account-starter/issues",
+  "homepage": "https://github.com/starkience/strk20-shadow-account-starter#readme",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "vendor/privacy-sdk",
+    "compatibility.json"
+  ],
   "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "postinstall": "pnpm exec tsc -p vendor/privacy-sdk/tsconfig.build.json",
+    "prepare": "pnpm sdk:build && pnpm lib:build",
+    "sdk:build": "tsc -p vendor/privacy-sdk/tsconfig.build.json",
+    "lib:build": "tsc -p tsconfig.lib.json",
     "dev": "node --env-file-if-exists=.env --import tsx scripts/server.ts",
-    "build": "tsc --noEmit",
+    "build": "pnpm sdk:build && pnpm lib:build",
     "start": "node --env-file-if-exists=.env --import tsx scripts/server.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "check": "pnpm typecheck && pnpm test",
+    "package:smoke": "node scripts/smoke-package.mjs",
+    "check": "pnpm build && pnpm typecheck && pnpm test && pnpm package:smoke",
     "shadow:doctor": "node --env-file-if-exists=.env --import tsx scripts/doctor.ts",
     "shadow:shield": "node --env-file-if-exists=.env --import tsx scripts/shield.ts",
     "shadow:invoke": "node --env-file-if-exists=.env --import tsx scripts/invoke.ts",
-    "shadow:demo": "node --env-file-if-exists=.env --import tsx scripts/demo.ts"
+    "shadow:demo": "node --env-file-if-exists=.env --import tsx scripts/demo.ts",
+    "anonymizer:deploy": "node --env-file-if-exists=.env --import tsx scripts/deploy-anonymizer.ts"
   },
   "dependencies": {
-    "@starkware-libs/starknet-privacy-sdk": "link:vendor/privacy-sdk",
     "@starknet-io/starknet-types-0101": "npm:@starknet-io/types-js@0.10.3",
     "hpke": "1.0.6",
     "ohttp-ts": "0.3.0",

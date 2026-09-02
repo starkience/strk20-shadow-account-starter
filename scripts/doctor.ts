@@ -1,8 +1,9 @@
 import {
   IndexerDiscoveryProvider,
   ProvingService,
-} from "@starkware-libs/starknet-privacy-sdk";
-import { RpcProvider, constants } from "starknet";
+} from "../src/vendor-sdk.js";
+import { RpcProvider, constants, hash } from "starknet";
+import compatibility from "../compatibility.json" with { type: "json" };
 import { loadPublicConfig } from "../src/lib/config";
 import { heading, ok, warn, fail } from "./terminal";
 import { PrivatePaymaster } from "../src/lib/private-paymaster";
@@ -15,6 +16,15 @@ async function main(): Promise<void> {
   ok(`Node ${process.versions.node}`);
 
   const config = loadPublicConfig();
+  assertSame("privacy pool address", config.poolAddress, compatibility.poolAddress);
+  assertSame("STRK token address", config.tokenAddress, compatibility.strkTokenAddress);
+  assertSame(
+    "shadow anonymizer address",
+    config.anonymizerAddress,
+    compatibility.shadowAccountAnonymizerAddress,
+  );
+  ok("configured addresses match compatibility.json");
+
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
   const chainId = await provider.getChainId();
   if (chainId !== constants.StarknetChainId.SN_SEPOLIA) {
@@ -22,14 +32,86 @@ async function main(): Promise<void> {
   }
   ok("RPC is Starknet Sepolia");
 
-  for (const [label, address] of [
-    ["privacy pool", config.poolAddress],
-    ["shadow anonymizer", config.anonymizerAddress],
-    ["STRK token", config.tokenAddress],
+  for (const [label, address, expectedClassHash] of [
+    ["privacy pool", config.poolAddress, compatibility.poolClassHash],
+    [
+      "shadow anonymizer",
+      config.anonymizerAddress,
+      compatibility.shadowAccountAnonymizerClassHash,
+    ],
+    ["STRK token", config.tokenAddress, compatibility.strkTokenClassHash],
   ] as const) {
     const classHash = await provider.getClassHashAt(address);
-    ok(`${label} deployed (${short(classHash)})`);
+    assertSame(`${label} class hash`, classHash, expectedClassHash);
+    ok(`${label} class hash matches (${short(classHash)})`);
   }
+
+  const boundPool = await provider.callContract({
+    contractAddress: config.anonymizerAddress,
+    entrypoint: "get_privacy_contract",
+    calldata: [],
+  });
+  assertSame("anonymizer-bound privacy pool", boundPool[0] ?? 0n, config.poolAddress);
+
+  const shadowClass = await provider.callContract({
+    contractAddress: config.anonymizerAddress,
+    entrypoint: "get_shadow_account_class_hash",
+    calldata: [],
+  });
+  assertSame(
+    "anonymizer shadow-account class hash",
+    shadowClass[0] ?? 0n,
+    compatibility.shadowAccountClassHash,
+  );
+
+  const screeningPolicy = await provider.callContract({
+    contractAddress: config.poolAddress,
+    entrypoint: "get_open_note_screening_policy",
+    calldata: [config.anonymizerAddress],
+  });
+  assertSame(
+    "anonymizer open-note screening policy",
+    screeningPolicy[0] ?? -1n,
+    compatibility.anonymizerOpenNoteScreeningPolicyValue,
+  );
+
+  const upgradeDelay = await provider.callContract({
+    contractAddress: config.anonymizerAddress,
+    entrypoint: "get_upgrade_delay",
+    calldata: [],
+  });
+  if (BigInt(upgradeDelay[0] ?? -1) !== BigInt(compatibility.anonymizerUpgradeDelaySeconds)) {
+    throw new Error("anonymizer upgrade delay no longer matches compatibility.json");
+  }
+
+  const finalization = await provider.getEvents({
+    from_block: { block_number: compatibility.anonymizerDeploymentBlock },
+    to_block: "latest",
+    address: config.anonymizerAddress,
+    keys: [[hash.getSelectorFromName("ImplementationFinalized")]],
+    chunk_size: 10,
+  });
+  const implementationFinalized = finalization.events.length > 0;
+  if (implementationFinalized !== compatibility.anonymizerImplementationFinalized) {
+    throw new Error("anonymizer finalization state no longer matches compatibility.json");
+  }
+
+  const anonymizerClass = await provider.getClassAt(config.anonymizerAddress);
+  const privacyInvokeOutputs = functionOutputs(
+    Array.isArray(anonymizerClass.abi) ? anonymizerClass.abi : [],
+    "privacy_invoke_with_computation",
+  );
+  if (
+    privacyInvokeOutputs.length !== 1 ||
+    privacyInvokeOutputs[0] !== compatibility.anonymizerPrivacyInvokeOutput
+  ) {
+    throw new Error(
+      `anonymizer invoke ABI is incompatible: expected ${compatibility.anonymizerPrivacyInvokeOutput}`,
+    );
+  }
+  ok(
+    `anonymizer is bound to the pool with ${compatibility.anonymizerOpenNoteScreeningPolicy} screening and the pinned invoke ABI`,
+  );
 
   const prover = new ProvingService({ baseUrl: config.proverUrl, requestTimeoutMs: 15_000 });
   if (!(await prover.isHealthy())) throw new Error("Proving service is unavailable");
@@ -40,6 +122,19 @@ async function main(): Promise<void> {
   ok("discovery service is healthy");
 
   ok("Privacy SDK is pinned locally; no StarkWare package credentials required");
+
+  if (compatibility.anonymizerProvenanceStatus === "verified-build") {
+    ok("anonymizer class reproduces from the pinned StarkWare source and compiler");
+  } else {
+    warn(
+      "Runtime compatibility passes, but the anonymizer build provenance is not independently reproducible yet.",
+    );
+  }
+  if (!implementationFinalized) {
+    warn(
+      "Pinned anonymizer is community-governed, unfinalized, and upgradeable with zero delay; run this doctor immediately before writes.",
+    );
+  }
 
   const paymasterApiKey = process.env.AVNU_PAYMASTER_API_KEY?.trim();
   if (paymasterApiKey) {
@@ -55,15 +150,43 @@ async function main(): Promise<void> {
     .filter((name) => !process.env[name]?.trim());
   if (missing.length) {
     warn(`Demo credentials still needed: ${missing.join(", ")}`);
+    console.log("\nRuntime stack is compatible. Add the missing server-side credentials before running a write.");
   } else {
     ok("demo credentials are configured");
+    console.log("\nReady for a credentialed write. Run `pnpm shadow:demo`.");
   }
-
-  console.log("\nReady for development. Run `pnpm shadow:demo` after filling .env.");
 }
 
 function short(value: string): string {
   return `${value.slice(0, 8)}…${value.slice(-6)}`;
+}
+
+function assertSame(label: string, actual: string | bigint | number, expected: string): void {
+  if (!sameAddress(actual, expected)) {
+    throw new Error(`${label} mismatch: expected ${expected}, received ${String(actual)}`);
+  }
+}
+
+function functionOutputs(abi: readonly unknown[], name: string): string[] {
+  for (const candidate of abi) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const item = candidate as { type?: unknown; name?: unknown; items?: unknown; outputs?: unknown };
+    if (item.type === "function" && item.name === name) return outputTypes(item.outputs);
+    if (item.type === "interface" && Array.isArray(item.items)) {
+      const nested = functionOutputs(item.items, name);
+      if (nested.length) return nested;
+    }
+  }
+  return [];
+}
+
+function outputTypes(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((output) => {
+    if (!output || typeof output !== "object") return [];
+    const type = (output as { type?: unknown }).type;
+    return typeof type === "string" ? [type] : [];
+  });
 }
 
 main().catch((error) => {

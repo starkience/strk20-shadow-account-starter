@@ -1,5 +1,5 @@
 import { hash } from "starknet";
-import { PRIMER_CLASS_HASH } from "./constants";
+import { PRIMER_CLASS_HASH } from "./constants.js";
 
 export function shadowAddressFromCommitment(
   commitment: bigint,

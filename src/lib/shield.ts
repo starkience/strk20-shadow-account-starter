@@ -1,11 +1,11 @@
-import { WarningCode } from "@starkware-libs/starknet-privacy-sdk";
+import { WarningCode } from "../vendor-sdk.js";
 import { type Call } from "starknet";
-import { approveCall, readU256, waitForSettledProvingBlock, waitForSuccessfulTransaction } from "./chain";
-import type { ShadowConfig } from "./config";
-import { SEPOLIA } from "./constants";
-import type { ProgressReporter } from "./progress";
-import { noopProgress } from "./progress";
-import { createSdkContext } from "./sdk";
+import { approveCall, readU256, waitForSettledProvingBlock, waitForSuccessfulTransaction } from "./chain.js";
+import type { ShadowConfig } from "./config.js";
+import { SEPOLIA } from "./constants.js";
+import type { ProgressReporter } from "./progress.js";
+import { noopProgress } from "./progress.js";
+import { createSdkContext } from "./sdk.js";
 
 export interface ShieldResult {
   readonly transactionHash: string;

@@ -34,7 +34,8 @@ button.addEventListener("click", async () => {
   try {
     const response = await fetch("/api/invoke", { method: "POST" });
     const body = await response.json();
-    if (!response.ok || !body.ok) throw new Error(body.error || `Request failed (${response.status})`);
+    const message = typeof body.error === "string" ? body.error : body.error?.message;
+    if (!response.ok || !body.ok) throw new Error(message || `Request failed (${response.status})`);
     clearInterval(timer);
     setState("success");
     document.querySelector("#result-address").textContent = short(body.result.shadowAddress);
