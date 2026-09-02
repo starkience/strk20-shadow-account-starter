@@ -194,17 +194,16 @@ async function main(): Promise<void> {
   const missing = [
     "ACCOUNT_ADDRESS",
     "ACCOUNT_PRIVATE_KEY",
-    "RECIPIENT_ADDRESS",
     "STARKSCAN_API_KEY",
     "AVNU_PAYMASTER_API_KEY",
   ]
     .filter((name) => !process.env[name]?.trim());
   if (missing.length) {
-    warn(`Demo credentials still needed: ${missing.join(", ")}`);
+    warn(`Runtime credentials still needed: ${missing.join(", ")}`);
     console.log("\nRuntime stack is compatible. Add the missing server-side credentials before running a write.");
   } else {
-    ok("demo credentials are configured");
-    console.log("\nReady for a credentialed write. Run `pnpm shadow:demo`.");
+    ok("runtime credentials are configured");
+    console.log("\nReady for a credentialed write. Run `pnpm shadow:demo --recipient 0x...`.");
   }
 }
 

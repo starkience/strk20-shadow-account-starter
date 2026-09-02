@@ -15,7 +15,8 @@ one floating package at a time.
 5. Run `pnpm install`, `pnpm check`, and `pnpm shadow:doctor`.
 6. Run the credentialed Sepolia lifecycle from a fresh nonce.
 7. Confirm the outer sender, event, registry, class hash, and effect assertions.
-8. Only then update the default `.env.example` values.
+8. Only then update the pinned constants, advanced-configuration table, and
+   four-value `.env.example` contract if credentials themselves changed.
 
 Watch [issue #978](https://github.com/starkware-libs/starknet-privacy/issues/978)
 before moving away from the pinned working anonymizer.

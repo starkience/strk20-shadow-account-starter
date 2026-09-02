@@ -25,7 +25,7 @@ of the release gate.
 
 ```bash
 pnpm shadow:doctor
-pnpm shadow:demo
+pnpm shadow:demo --recipient 0x...
 ```
 
 The first run may take extra blocks because the proof base must be ten blocks

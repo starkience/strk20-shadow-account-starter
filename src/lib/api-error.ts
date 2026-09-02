@@ -28,7 +28,7 @@ const SAFE_MESSAGES = [
   /^fundingAmount must not be negative$/,
   /^Not enough mature shielded STRK\./,
   /^Paymaster requested its private fee in an unexpected token$/,
-  /^Paymaster fee exceeds MAX_PAYMASTER_FEE_STRK$/,
+  /^Paymaster fee exceeds the configured safety limit$/,
   /^Private paymaster rejected paymaster_(?:build|execute)Transaction(?: \(code [-\w]+\))?; HTTP \d+$/,
   /^Stopped: the SDK reported USER_LINKAGE$/,
   /^Shadow-account registry did not resolve to the expected address$/,

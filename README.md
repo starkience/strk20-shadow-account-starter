@@ -37,27 +37,26 @@ Set these values in `.env`:
 ```dotenv
 ACCOUNT_ADDRESS=0x...
 ACCOUNT_PRIVATE_KEY=0x...
-RECIPIENT_ADDRESS=0x...
 STARKSCAN_API_KEY=...
 AVNU_PAYMASTER_API_KEY=...
 ```
 
-Use a dedicated test account, keep `.env` private, and make
-`RECIPIENT_ADDRESS` different from `ACCOUNT_ADDRESS`. Each team supplies its
-own service credentials; none are bundled with the starter.
+Use a dedicated test account and keep `.env` private. Each team supplies its
+own service credentials; none are bundled with the starter. The Sepolia RPC,
+contracts, and service URLs are already pinned.
 
 ```bash
 pnpm shadow:doctor
-pnpm shadow:demo
+pnpm shadow:demo --recipient 0x...
 ```
 
 `shadow:doctor` checks the pinned Sepolia stack without spending a proof or
 writing onchain. `shadow:demo` sends an asynchronous proof job through
-Starkscan, then privately invokes a STRK transfer. If private STRK is
-unavailable, it first performs the public shield transaction and waits until
-the note is usable.
+Starkscan, then privately invokes a STRK transfer. Use a recipient different
+from the root account. If private STRK is unavailable, the demo first performs
+the public shield transaction and waits until the note is usable.
 
-For the local workbench, run `pnpm dev` and open
+For the local workbench, run `pnpm dev --recipient 0x...` and open
 [127.0.0.1:3000](http://127.0.0.1:3000). Keys stay in the Node process.
 
 ## Add it to a project
@@ -113,7 +112,9 @@ its returned `readyAtHeadBlock` before invoking. Shielding is public; do not run
 it automatically for every application request.
 
 See [the integration guide](docs/INTEGRATION.md) for shielding, identity and
-nonce policy, concurrency, safe errors, and backend API design.
+nonce policy, concurrency, safe errors, and backend API design. Normal builders
+do not configure infrastructure; maintainer-only escape hatches are documented
+separately in [advanced configuration](docs/CONFIGURATION.md).
 
 ## Rules that integrations must keep
 

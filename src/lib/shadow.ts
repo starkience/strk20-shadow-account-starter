@@ -1,5 +1,11 @@
 import { shortString, type Call } from "starknet";
-import { loadRuntimeConfig, type ShadowRuntimeConfig } from "./config.js";
+import {
+  createRuntimeConfig,
+  loadRuntimeConfig,
+  type ShadowAccountCredentials,
+  type ShadowAdvancedOptions,
+  type ShadowRuntimeConfig,
+} from "./config.js";
 import {
   invokeShadowCalls,
   type GenericShadowInvokeResult,
@@ -10,8 +16,10 @@ import type { ProgressReporter } from "./progress.js";
 import { shieldStrk, type ShieldResult } from "./shield.js";
 
 export interface CreateShadowAccountOptions {
-  /** Supply programmatically, or omit to load the server-side environment. */
-  readonly config?: ShadowRuntimeConfig;
+  /** Supply the same four values as `.env`, or omit to load them from the environment. */
+  readonly credentials?: ShadowAccountCredentials;
+  /** Maintainer-only overrides; normal builders should use the pinned Sepolia stack. */
+  readonly advanced?: ShadowAdvancedOptions;
   /** Application scope shared by the shadow identities created by this client. */
   readonly appName?: string;
   /** Default identity nonce. Individual calls may override it. */
@@ -46,7 +54,10 @@ export interface ShadowAccountClient {
 export function createShadowAccount(
   options?: CreateShadowAccountOptions,
 ): ShadowAccountClient {
-  const loaded = options?.config ?? loadRuntimeConfig();
+  const identity = { appName: options?.appName, nonce: options?.nonce };
+  const loaded = options?.credentials
+    ? createRuntimeConfig(options.credentials, identity, options.advanced)
+    : loadRuntimeConfig(identity, options?.advanced);
   const appName = validateAppName(options?.appName ?? loaded.appName);
   const defaultNonce = validateNonce(options?.nonce ?? loaded.nonce);
   const config: ShadowRuntimeConfig = { ...loaded, appName, nonce: defaultNonce };

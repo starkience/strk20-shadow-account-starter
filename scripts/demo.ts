@@ -3,11 +3,12 @@ import { loadShadowConfig } from "../src/lib/config";
 import { invokeShadowTransfer } from "../src/lib/invoke-shadow";
 import { shieldStrk } from "../src/lib/shield";
 import { delay } from "../src/lib/chain";
+import { parseShadowRecipeOptions } from "./recipe-options";
 import { fail, heading, ok, progress, warn } from "./terminal";
 
 async function main(): Promise<void> {
   heading("STRK20 shadow-account demo");
-  const config = loadShadowConfig();
+  const config = loadShadowConfig(parseShadowRecipeOptions(process.argv.slice(2)));
   try {
     const result = await invokeShadowTransfer(config, progress);
     verified(result.explorerUrl);

@@ -2,11 +2,12 @@ import { formatUnits } from "../src/lib/amounts";
 import { loadShadowConfig } from "../src/lib/config";
 import { STRK_DECIMALS } from "../src/lib/constants";
 import { invokeShadowTransfer } from "../src/lib/invoke-shadow";
+import { parseShadowRecipeOptions } from "./recipe-options";
 import { fail, heading, ok, progress } from "./terminal";
 
 async function main(): Promise<void> {
   heading("Invoke through a shadow account");
-  const config = loadShadowConfig();
+  const config = loadShadowConfig(parseShadowRecipeOptions(process.argv.slice(2)));
   console.log(`App:       ${config.appName}`);
   console.log(`Nonce:     ${config.nonce}`);
   console.log(`Recipient: ${config.recipientAddress}`);

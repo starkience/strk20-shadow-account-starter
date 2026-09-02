@@ -1,29 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ShadowRuntimeConfig } from "../src/lib/config";
+import type {
+  ShadowAccountCredentials,
+  ShadowAdvancedOptions,
+} from "../src/lib/config";
 import { createShadowAccount } from "../src/lib/shadow";
 
-const runtimeConfig: ShadowRuntimeConfig = {
+const credentials: ShadowAccountCredentials = {
   accountAddress: "0x1",
   accountPrivateKey: "0x2",
   viewingKey: 3n,
+  starkscanApiKey: "prover-secret",
+  avnuPaymasterApiKey: "secret",
+};
+
+const advanced: ShadowAdvancedOptions = {
   rpcUrl: "https://rpc.example",
   poolAddress: "0x4",
   tokenAddress: "0x5",
   anonymizerAddress: "0x6",
   proverUrl: "https://prover.example",
-  proverApiKey: "prover-secret",
   discoveryUrl: "https://discovery.example",
   paymasterUrl: "https://paymaster.example",
-  paymasterApiKey: "secret",
-  appName: "configured-app",
-  nonce: 0n,
   maxPaymasterFee: 10n,
 };
 
 test("generic shadow client does not require transfer-demo configuration", () => {
   const client = createShadowAccount({
-    config: runtimeConfig,
+    credentials,
+    advanced,
     appName: "builder-game",
     nonce: 12n,
   });
@@ -33,21 +38,21 @@ test("generic shadow client does not require transfer-demo configuration", () =>
 
 test("shadow identity inputs reject unsafe or ambiguous values before network work", () => {
   assert.throws(
-    () => createShadowAccount({ config: runtimeConfig, nonce: -1n }),
+    () => createShadowAccount({ credentials, advanced, nonce: -1n }),
     /non-negative bigint/,
   );
   assert.throws(
-    () => createShadowAccount({ config: runtimeConfig, appName: "x".repeat(32) }),
+    () => createShadowAccount({ credentials, advanced, appName: "x".repeat(32) }),
     /Cairo short string/,
   );
   assert.throws(
-    () => createShadowAccount({ config: runtimeConfig, appName: "" }),
+    () => createShadowAccount({ credentials, advanced, appName: "" }),
     /must not be empty/,
   );
 });
 
 test("public shielding rejects unsafe amounts before network work", async () => {
-  const client = createShadowAccount({ config: runtimeConfig });
+  const client = createShadowAccount({ credentials, advanced });
   await assert.rejects(client.shield(0n), /positive bigint/);
   await assert.rejects(client.shield(-1n), /positive bigint/);
   await assert.rejects(client.shield(1 as unknown as bigint), /positive bigint/);

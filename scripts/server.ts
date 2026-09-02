@@ -5,9 +5,11 @@ import { toPublicInvocationError } from "../src/lib/api-error";
 import { loadPublicConfig, loadShadowConfig } from "../src/lib/config";
 import { invokeShadowTransfer } from "../src/lib/invoke-shadow";
 import { hasWorkbenchRequestGuard, isAllowedWorkbenchHost } from "./workbench-security";
+import { parseWorkbenchRecipeOptions } from "./recipe-options";
 
 const publicDir = resolve(import.meta.dirname, "../public");
 const port = Number(process.env.PORT || "3000");
+const recipe = parseWorkbenchRecipeOptions(process.argv.slice(2));
 let active = false;
 
 const assets = new Map<string, readonly [string, string]>([
@@ -33,7 +35,7 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "GET" && request.url === "/api/config") {
-      const config = loadPublicConfig();
+      const config = loadPublicConfig(recipe);
       return json(response, 200, {
         appName: config.appName,
         nonce: config.nonce.toString(),
@@ -41,10 +43,9 @@ const server = createServer(async (request, response) => {
         configured: [
           "ACCOUNT_ADDRESS",
           "ACCOUNT_PRIVATE_KEY",
-          "RECIPIENT_ADDRESS",
           "STARKSCAN_API_KEY",
           "AVNU_PAYMASTER_API_KEY",
-        ].every((name) => Boolean(process.env[name]?.trim())),
+        ].every((name) => Boolean(process.env[name]?.trim())) && Boolean(recipe.recipientAddress),
       });
     }
 
@@ -55,7 +56,13 @@ const server = createServer(async (request, response) => {
       if (active) return json(response, 409, { ok: false, error: "An invocation is already running." });
       active = true;
       try {
-        const result = await invokeShadowTransfer(loadShadowConfig());
+        if (!recipe.recipientAddress) {
+          throw new Error("Restart with --recipient 0x... to configure the transfer recipe");
+        }
+        const result = await invokeShadowTransfer(loadShadowConfig({
+          ...recipe,
+          recipientAddress: recipe.recipientAddress,
+        }));
         return json(response, 200, { ok: true, result });
       } catch (error) {
         const publicError = toPublicInvocationError(error);

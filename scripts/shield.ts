@@ -1,15 +1,15 @@
 import { formatUnits } from "../src/lib/amounts";
-import { loadShadowConfig } from "../src/lib/config";
 import { SEPOLIA, STRK_DECIMALS } from "../src/lib/constants";
-import { shieldStrk } from "../src/lib/shield";
+import { createShadowAccount } from "../src/lib/shadow";
+import { parseShieldAmount } from "./recipe-options";
 import { fail, heading, ok, progress, warn } from "./terminal";
 
 async function main(): Promise<void> {
   heading("Shield test STRK");
-  const config = loadShadowConfig();
+  const amount = parseShieldAmount(process.argv.slice(2));
   warn("Shielding is a public edge: the account, token, amount, and timing are visible.");
-  console.log(`Amount: ${formatUnits(config.shieldAmount, STRK_DECIMALS)} STRK`);
-  const result = await shieldStrk(config, progress);
+  console.log(`Amount: ${formatUnits(amount, STRK_DECIMALS)} STRK`);
+  const result = await createShadowAccount({ onProgress: progress }).shield(amount);
   ok(`Shielded at block ${result.blockNumber}`);
   console.log(`${SEPOLIA.explorerUrl}/tx/${result.transactionHash}`);
   console.log(`Spendable from proving base block ${result.spendableAtBlock}.`);

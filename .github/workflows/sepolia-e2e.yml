@@ -32,14 +32,13 @@ jobs:
           ACCOUNT_ADDRESS: ${{ secrets.SEPOLIA_ACCOUNT_ADDRESS }}
           ACCOUNT_PRIVATE_KEY: ${{ secrets.SEPOLIA_ACCOUNT_PRIVATE_KEY }}
           VIEWING_KEY: ${{ secrets.SEPOLIA_VIEWING_KEY }}
-          RECIPIENT_ADDRESS: ${{ secrets.SEPOLIA_RECIPIENT_ADDRESS }}
           STARKSCAN_API_KEY: ${{ secrets.STARKSCAN_API_KEY }}
           AVNU_PAYMASTER_API_KEY: ${{ secrets.AVNU_PAYMASTER_API_KEY }}
-      - run: pnpm shadow:demo
+      - run: pnpm shadow:demo --recipient "$SEPOLIA_RECIPIENT_ADDRESS"
         env:
           ACCOUNT_ADDRESS: ${{ secrets.SEPOLIA_ACCOUNT_ADDRESS }}
           ACCOUNT_PRIVATE_KEY: ${{ secrets.SEPOLIA_ACCOUNT_PRIVATE_KEY }}
           VIEWING_KEY: ${{ secrets.SEPOLIA_VIEWING_KEY }}
-          RECIPIENT_ADDRESS: ${{ secrets.SEPOLIA_RECIPIENT_ADDRESS }}
+          SEPOLIA_RECIPIENT_ADDRESS: ${{ secrets.SEPOLIA_RECIPIENT_ADDRESS }}
           STARKSCAN_API_KEY: ${{ secrets.STARKSCAN_API_KEY }}
           AVNU_PAYMASTER_API_KEY: ${{ secrets.AVNU_PAYMASTER_API_KEY }}

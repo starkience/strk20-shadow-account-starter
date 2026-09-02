@@ -89,7 +89,7 @@ export async function invokeShadowCalls(
     throw new Error("Paymaster requested its private fee in an unexpected token");
   }
   if ((fee?.amount ?? 0n) > config.maxPaymasterFee) {
-    throw new Error("Paymaster fee exceeds MAX_PAYMASTER_FEE_STRK");
+    throw new Error("Paymaster fee exceeds the configured safety limit");
   }
 
   const provingBlock = (await provider.getBlockNumber()) - SEPOLIA.provingDepthBlocks;
@@ -277,7 +277,7 @@ export async function invokeShadowTransfer(
           [config.recipientAddress],
         );
         if (recipientBalanceAfter - recipientBalanceBefore !== config.spendAmount) {
-          throw new Error("Recipient balance delta does not equal SPEND_AMOUNT_STRK");
+          throw new Error("Recipient balance delta does not equal the configured transfer amount");
         }
       },
     },

@@ -11,13 +11,16 @@ Use Node 24+ and a dedicated, deployed Sepolia account whose configured signer
 can authorize a transaction by itself. Configure:
 
 - `ACCOUNT_ADDRESS` and `ACCOUNT_PRIVATE_KEY`;
-- `VIEWING_KEY`, if the account is already registered with one;
 - `STARKSCAN_API_KEY` with proving access;
-- `AVNU_PAYMASTER_API_KEY`; and
-- a different `RECIPIENT_ADDRESS` for the included transfer recipe.
+- `AVNU_PAYMASTER_API_KEY`.
 
 Keep every secret in the trusted process. Never put them in frontend
 environment variables, `public/`, logs, or API responses.
+
+The starter derives a viewing key for a fresh development account. An account
+already registered with STRK20 must provide its original `VIEWING_KEY`; see
+[advanced configuration](CONFIGURATION.md). Normal builders do not configure
+RPC, contract, prover, discovery, or paymaster URLs.
 
 The SDK constructs a signed proof invocation. The starter submits it to the
 pinned Starkscan endpoint with one idempotency key, polls the asynchronous job,
@@ -46,8 +49,12 @@ corepack enable
 pnpm install
 cp .env.example .env
 pnpm shadow:doctor
-pnpm shadow:demo
+pnpm shadow:demo --recipient 0x...
 ```
+
+The recipient is a demo input, not backend configuration, and must differ from
+the root account. Optional recipe flags are `--spend-amount`,
+`--shield-amount`, `--app-name`, and `--nonce`.
 
 The first demo may publicly shield STRK and wait for its note and proving base
 to mature. That public setup transaction is separate from the shadow
@@ -92,8 +99,8 @@ proving base. An invocation before then returns `PRIVATE_BALANCE_NOT_READY`.
 
 Discovery requests use OHTTP by default. Without a separate OHTTP relay, the
 discovery service still sees the caller's IP address and decrypts the request.
-Production operators can pass a `discoveryOhttp` object in `config` with a
-pinned `publicKeyConfig` and a `relayUrl`. Starkscan proving uses its
+Production operators can pass a `discoveryOhttp` object under the `advanced`
+option with a pinned `publicKeyConfig` and a `relayUrl`. Starkscan proving uses its
 authenticated HTTPS job API rather than the SDK's direct OHTTP prover client.
 
 ## 2. Add the server-side call
@@ -135,6 +142,21 @@ const result = await shadow.invoke({
 console.log(result.shadowAddress, result.transactionHash, result.effectVerified);
 ```
 
+By default the constructor loads the four values from `.env`. Code that already
+has a secret manager can provide the same minimal surface directly:
+
+```ts
+const shadow = createShadowAccount({
+  credentials: {
+    accountAddress,
+    accountPrivateKey,
+    starkscanApiKey,
+    avnuPaymasterApiKey,
+  },
+  appName: "my-game",
+});
+```
+
 The starter verifies the successful receipt, commitment registry, deployed
 class, deployment event for a fresh identity, and that the outer sender is not
 the root account. `verifyEffect` supplies the application-specific assertion.
@@ -168,9 +190,11 @@ calls. Validate and construct allowed calls inside the trusted backend. If an
 HTTP boundary carries amounts or nonces, send decimal strings and parse them
 directly with `BigInt`; JSON does not encode bigint values.
 
-The included workbench binds to `127.0.0.1` and demonstrates a fixed transfer.
-It is not a production relay API. Python and Rust projects can keep the same
-boundary by running this Node 24 integration as an authenticated sidecar.
+The included workbench runs with
+`pnpm dev --recipient 0x...`, binds to `127.0.0.1`, and demonstrates a fixed
+transfer. It is not a production relay API. Python and Rust projects can keep
+the same boundary by running this Node 24 integration as an authenticated
+sidecar.
 
 ## 5. Handle failures without creating duplicate writes
 
@@ -210,6 +234,7 @@ try {
 
 - `pnpm check` passes on Node 24.
 - `pnpm shadow:doctor` confirms the exact pinned deployment row.
+- `.env` contains only the account and two service credentials.
 - Secrets exist only in the trusted process.
 - The Starkscan and AVNU keys belong to the integrating team and are not shared
   with a frontend.

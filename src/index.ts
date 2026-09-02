@@ -25,11 +25,8 @@ export {
   type PublicInvocationErrorCode,
 } from "./lib/api-error.js";
 export {
-  loadRuntimeConfig,
-  loadShadowConfig,
-  type ShieldConfig,
-  type ShadowRuntimeConfig,
-  type ShadowConfig,
+  type ShadowAccountCredentials,
+  type ShadowAdvancedOptions,
 } from "./lib/config.js";
 export { parseUnits, formatUnits } from "./lib/amounts.js";
 export { STRK_DECIMALS } from "./lib/constants.js";
