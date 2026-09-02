@@ -28,6 +28,7 @@ const config: ShadowConfig = {
   tokenAddress: TOKEN,
   anonymizerAddress: ANONYMIZER,
   proverUrl: "https://prover.example",
+  proverApiKey: "prover-secret",
   discoveryUrl: "https://discovery.example",
   paymasterUrl: "https://paymaster.example",
   paymasterApiKey: "secret",

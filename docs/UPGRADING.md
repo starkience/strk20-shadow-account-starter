@@ -10,8 +10,8 @@ one floating package at a time.
    CASM hashes, declaration transaction, deployment transaction, and constructor
    arguments. A source commit by itself is not reproducible provenance.
 4. Update `compatibility.json` with versions, addresses, every class hash,
-   screening policy, invoke output shape, paymaster endpoint and fee mode, and
-   provenance status.
+   screening policy, invoke output shape, Starkscan endpoint and transport,
+   paymaster endpoint and fee mode, and provenance status.
 5. Run `pnpm install`, `pnpm check`, and `pnpm shadow:doctor`.
 6. Run the credentialed Sepolia lifecycle from a fresh nonce.
 7. Confirm the outer sender, event, registry, class hash, and effect assertions.

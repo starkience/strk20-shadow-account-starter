@@ -82,8 +82,8 @@ replaceability component rejects future class replacements after finalization.
 
 This closes the earlier community-governance boundary. The starter still runs
 the doctor before writes to detect changed addresses, classes, bindings,
-services, or API shapes, but the pinned anonymizer implementation itself is no
-longer upgradeable.
+discovery, and paymaster behavior. The pinned anonymizer implementation itself
+is no longer upgradeable.
 
 The maintainer command performs those two writes and verifies the resulting
 class, pool binding, shadow class, and finalization event:

@@ -12,11 +12,21 @@ can authorize a transaction by itself. Configure:
 
 - `ACCOUNT_ADDRESS` and `ACCOUNT_PRIVATE_KEY`;
 - `VIEWING_KEY`, if the account is already registered with one;
+- `STARKSCAN_API_KEY` with proving access;
 - `AVNU_PAYMASTER_API_KEY`; and
 - a different `RECIPIENT_ADDRESS` for the included transfer recipe.
 
 Keep every secret in the trusted process. Never put them in frontend
 environment variables, `public/`, logs, or API responses.
+
+The SDK constructs a signed proof invocation. The starter submits it to the
+pinned Starkscan endpoint with one idempotency key, polls the asynchronous job,
+and converts the first delivered result back into the SDK's `Proof` type. It
+never generates proofs in the browser or falls back to another prover. A proof
+job can take minutes; keep the backend request alive or run the invocation in a
+durable worker. The key is derived from the exact request, so resubmitting that
+request after a backend restart recovers the same logical job instead of
+spending a second proving slot.
 
 `ACCOUNT_PRIVATE_KEY` is a single Stark-curve signer, not a wallet recovery
 phrase or a complete multisig policy. Ready/Argent accounts with an active
@@ -80,12 +90,11 @@ Do this as an explicit onboarding/funding operation, not on every application
 request. The returned head accounts for note maturity and the ten-block-deep
 proving base. An invocation before then returns `PRIVATE_BALANCE_NOT_READY`.
 
-Proving and discovery requests use OHTTP by default on the pinned services.
-Without a separate relay, those services still see the caller's IP address and
-decrypt the request. Production operators can pass `provingOhttp` and
-`discoveryOhttp` objects in `config` with a pinned `publicKeyConfig` and a
-`relayUrl`; explicitly pass `false` only for a custom endpoint that does not
-support OHTTP.
+Discovery requests use OHTTP by default. Without a separate OHTTP relay, the
+discovery service still sees the caller's IP address and decrypts the request.
+Production operators can pass a `discoveryOhttp` object in `config` with a
+pinned `publicKeyConfig` and a `relayUrl`. Starkscan proving uses its
+authenticated HTTPS job API rather than the SDK's direct OHTTP prover client.
 
 ## 2. Add the server-side call
 
@@ -184,6 +193,10 @@ try {
   rebuild against a new proving block.
 - `USER_LINKAGE` is a privacy stop, not a warning to ignore.
 - `PAYMASTER_REJECTED` is a definite rejection.
+- `PROOF_DELIVERY_UNKNOWN` means Starkscan cannot confirm whether the prover
+  received the job. Do not start a new proof automatically. Keep the job ID and
+  the trusted error's idempotency key, then reconcile with the proving-service
+  operator. The public error intentionally omits that recovery key.
 - `SUBMISSION_UNKNOWN` means the connection failed during relay submission.
   Do not blindly submit the proof again. When the error contains a tracking ID,
   call `await shadow.reconcile(trackingId)` to retrieve AVNU's latest hash and
@@ -198,6 +211,8 @@ try {
 - `pnpm check` passes on Node 24.
 - `pnpm shadow:doctor` confirms the exact pinned deployment row.
 - Secrets exist only in the trusted process.
+- The Starkscan and AVNU keys belong to the integrating team and are not shared
+  with a frontend.
 - Initial private STRK is provisioned explicitly through `shadow.shield(...)`
   or a private transfer from another compatible wallet.
 - The target call is constructed from validated application inputs.

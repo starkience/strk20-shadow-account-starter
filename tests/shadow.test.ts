@@ -12,6 +12,7 @@ const runtimeConfig: ShadowRuntimeConfig = {
   tokenAddress: "0x5",
   anonymizerAddress: "0x6",
   proverUrl: "https://prover.example",
+  proverApiKey: "prover-secret",
   discoveryUrl: "https://discovery.example",
   paymasterUrl: "https://paymaster.example",
   paymasterApiKey: "secret",

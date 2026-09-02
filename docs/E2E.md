@@ -1,19 +1,21 @@
 # End-to-end release gate
 
 The deterministic suite verifies encoding, amount safety, maturity selection,
-the upstream Cairo/TypeScript address vector, private-paymaster request shape,
-submission uncertainty, secret-safe API errors, and the shadow orchestration's
-relay and postcondition gates. It cannot prove that the currently deployed
-Sepolia services accept a write.
+the upstream Cairo/TypeScript address vector, Starkscan idempotency and polling,
+private-paymaster request shape, delivery uncertainty, secret-safe API errors,
+and the shadow orchestration's relay and postcondition gates. It cannot prove
+that the currently deployed Sepolia services accept a write.
 
 ## Live prerequisites
 
 - Dedicated, deployed Sepolia account with enough public STRK for shielding.
 - A separate recipient address.
+- Starkscan API key with proving access.
 - AVNU private-paymaster API key.
-- The pinned pool, anonymizer, prover, discovery service, and Sepolia
-  paymaster endpoint passing
-  `pnpm shadow:doctor`.
+- The pinned pool, anonymizer, Starkscan endpoint, discovery service, and
+  Sepolia paymaster endpoint passing `pnpm shadow:doctor`. The doctor validates
+  prover configuration without consuming a proof job; `pnpm shadow:demo` is
+  the credentialed prover check.
 
 The pinned runtime now uses the starter-owned finalized deployment described in
 [`PROVENANCE.md`](PROVENANCE.md). The earlier community deployment is not part
@@ -55,13 +57,14 @@ Deployment and E2E workflows share one non-cancelling concurrency group so the
 dedicated account cannot submit overlapping writes or race private-note
 selection.
 
-Do not weaken assertions to make a flaky external service look green. Treat
-timeouts as “submission status unknown” when they happen after relay start and
-reconcile the transaction before retrying.
+Do not weaken assertions to make a flaky external service look green. A
+`PROOF_DELIVERY_UNKNOWN` result must not create a fresh proof automatically.
+Treat paymaster timeouts after relay start as transaction-submission status
+unknown and reconcile the transaction before retrying.
 
-## Passing release evidence
+## Recorded onchain evidence
 
-The complete gate passed on 2026-09-02 from merged `main` commit
+The complete six-assertion shadow-account gate passed on 2026-09-02 from commit
 `724d3fed8ffcf7c939799d6fd4addc748a8f7b8e` in
 [GitHub Actions run 33630618461](https://github.com/starkience/strk20-shadow-account-starter/actions/runs/33630618461).
 
@@ -92,3 +95,7 @@ Independent RPC reconciliation confirms every required assertion:
 
 The job printed `✓ Shadow-account invocation verified end to end` only after
 all six checks completed.
+
+The public Starkscan adapter is covered by deterministic transport tests. A
+credentialed Starkscan run is intentionally not part of public CI; builders and
+maintainers exercise it through the opt-in workflow or `pnpm shadow:demo`.

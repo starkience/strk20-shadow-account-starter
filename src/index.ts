@@ -14,6 +14,12 @@ export {
   type PaymasterTracking,
 } from "./lib/private-paymaster.js";
 export {
+  StarkscanProofDeliveryUnknownError,
+  StarkscanProofProvider,
+  StarkscanProverError,
+  type StarkscanProofProviderOptions,
+} from "./lib/starkscan-prover.js";
+export {
   toPublicInvocationError,
   type PublicInvocationError,
   type PublicInvocationErrorCode,

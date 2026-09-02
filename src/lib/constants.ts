@@ -9,7 +9,7 @@ export const SEPOLIA = {
     "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
   shadowAccountAnonymizerAddress:
     "0x05f23b2497e99dde2c9aed326cc36c2c41fd11ce946435157521caa4895d129f",
-  proverUrl: "https://transaction-prover.alpha-sepolia.sw-dev.io",
+  proverUrl: "https://api.starkscan.co/v1/SN_SEPOLIA/prove",
   discoveryUrl: "https://discovery-service.alpha-sepolia.sw-dev.io",
   paymasterUrl: "https://sepolia.paymaster.avnu.fi",
   provingDepthBlocks: 10,
@@ -18,6 +18,8 @@ export const SEPOLIA = {
 } as const;
 
 export const STRK_DECIMALS = 18;
+export const STARKSCAN_PROVER_PROVIDER = "starkscan-async-v1";
+export const STARKSCAN_NETWORK = "SN_SEPOLIA";
 
 /**
  * The primer class used by the pinned Sepolia shadow-account anonymizer.
