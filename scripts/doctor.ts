@@ -14,6 +14,7 @@ import {
 import { sameAddress } from "../src/lib/shadow-address";
 import { DEFAULT_OHTTP_ENABLED } from "../src/lib/sdk";
 import { SEPOLIA } from "../src/lib/constants";
+import { hasImplementationFinalizedEvent } from "./anonymizer-deployment";
 
 async function main(): Promise<void> {
   heading("STRK20 shadow-account doctor");
@@ -106,7 +107,11 @@ async function main(): Promise<void> {
     keys: [[hash.getSelectorFromName("ImplementationFinalized")]],
     chunk_size: 10,
   });
-  const implementationFinalized = finalization.events.length > 0;
+  const implementationFinalized = hasImplementationFinalizedEvent(
+    finalization.events,
+    config.anonymizerAddress,
+    compatibility.shadowAccountAnonymizerClassHash,
+  );
   if (implementationFinalized !== compatibility.anonymizerImplementationFinalized) {
     throw new Error("anonymizer finalization state no longer matches compatibility.json");
   }
@@ -157,7 +162,9 @@ async function main(): Promise<void> {
 
   ok("Privacy SDK is pinned locally; no StarkWare package credentials required");
 
-  if (compatibility.anonymizerProvenanceStatus === "verified-build") {
+  if (compatibility.anonymizerProvenanceStatus === "verified-build-finalized") {
+    ok("anonymizer class reproduces from pinned StarkWare source and is permanently finalized");
+  } else if (compatibility.anonymizerProvenanceStatus === "verified-build") {
     ok("anonymizer class reproduces from the pinned StarkWare source and compiler");
   } else {
     warn(

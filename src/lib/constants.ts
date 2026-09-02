@@ -8,7 +8,7 @@ export const SEPOLIA = {
   strkTokenAddress:
     "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
   shadowAccountAnonymizerAddress:
-    "0x020b9f80cba4bda1f2edbbc8cab85d9a132559f7bdef9635f16af32d95b5afde",
+    "0x05f23b2497e99dde2c9aed326cc36c2c41fd11ce946435157521caa4895d129f",
   proverUrl: "https://transaction-prover.alpha-sepolia.sw-dev.io",
   discoveryUrl: "https://discovery-service.alpha-sepolia.sw-dev.io",
   paymasterUrl: "https://sepolia.paymaster.avnu.fi",

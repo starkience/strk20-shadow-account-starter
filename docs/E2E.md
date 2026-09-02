@@ -15,9 +15,9 @@ Sepolia services accept a write.
   paymaster endpoint passing
   `pnpm shadow:doctor`.
 
-The current community deployment may be used for an experimental hackathon
-write after the doctor passes. A release-quality evidence run must use the
-starter-owned finalized deployment described in [`PROVENANCE.md`](PROVENANCE.md).
+The pinned runtime now uses the starter-owned finalized deployment described in
+[`PROVENANCE.md`](PROVENANCE.md). The earlier community deployment is not part
+of the release gate.
 
 ## Run
 
