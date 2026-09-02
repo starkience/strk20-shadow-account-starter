@@ -17,6 +17,12 @@ Use Node 24+ and a dedicated, deployed Sepolia account. Configure:
 Keep every secret in the trusted process. Never put them in frontend
 environment variables, `public/`, logs, or API responses.
 
+The pinned `https://sepolia.paymaster.avnu.fi` endpoint accepts the pool in a
+credential-free read-only probe. The actual `sponsored_private` submission
+still requires the API key; the starter does not silently fall back to a
+different fee mode. The request shape is pinned to AVNU's OpenRPC specification
+at commit `b93aba20dfba4d4256131c3e1a446a323464e695`.
+
 ```bash
 corepack enable
 pnpm install

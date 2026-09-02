@@ -211,8 +211,8 @@ see [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 - Anonymizer Sierra/CASM reproduction against its onchain declaration:
   passing with the exact upstream compiler pin.
 - Live read-only Sepolia addresses, class hashes, bound-pool configuration,
-  screening policy, invoke ABI, RPC, prover, and discovery checks: passing on
-  2026-09-02.
+  screening policy, invoke ABI, RPC, prover, discovery, and paymaster pool
+  acceptance checks: passing on 2026-09-02.
 - Fresh credentialed shield → mature note → relayed shadow invoke: implemented;
   final write evidence requires a funded Sepolia account and AVNU API key in
   repository secrets. It must not be marked passing until that job produces a

@@ -11,7 +11,7 @@ export const SEPOLIA = {
     "0x020b9f80cba4bda1f2edbbc8cab85d9a132559f7bdef9635f16af32d95b5afde",
   proverUrl: "https://transaction-prover.alpha-sepolia.sw-dev.io",
   discoveryUrl: "https://discovery-service.alpha-sepolia.sw-dev.io",
-  paymasterUrl: "https://starknet.paymaster.avnu.fi",
+  paymasterUrl: "https://sepolia.paymaster.avnu.fi",
   provingDepthBlocks: 10,
   noteMaturityBlocks: 10,
   explorerUrl: "https://sepolia.voyager.online",
