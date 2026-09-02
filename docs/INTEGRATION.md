@@ -52,6 +52,26 @@ pnpm add ../strk20-shadow-account-starter/strk20-shadow-account-starter-0.1.0.tg
 The tarball includes the compiled public entrypoint and pinned vendored SDK, so
 the integrating project does not need StarkWare package-registry credentials.
 
+If the account does not already hold private STRK, initialize it through the
+typed public API. This is a public pool edge; the root account, token, amount,
+and timing are visible:
+
+```ts
+import {
+  createShadowAccount,
+  parseUnits,
+  STRK_DECIMALS,
+} from "strk20-shadow-account-starter";
+
+const shadow = createShadowAccount();
+const shielded = await shadow.shield(parseUnits("5", STRK_DECIMALS));
+console.log(`Private STRK is usable after chain head ${shielded.readyAtHeadBlock}`);
+```
+
+Do this as an explicit onboarding/funding operation, not on every application
+request. The returned head accounts for note maturity and the ten-block-deep
+proving base. An invocation before then returns `PRIVATE_BALANCE_NOT_READY`.
+
 Proving and discovery requests use OHTTP by default on the pinned services.
 Without a separate relay, those services still see the caller's IP address and
 decrypt the request. Production operators can pass `provingOhttp` and
@@ -170,6 +190,8 @@ try {
 - `pnpm check` passes on Node 24.
 - `pnpm shadow:doctor` confirms the exact pinned deployment row.
 - Secrets exist only in the trusted process.
+- Initial private STRK is provisioned explicitly through `shadow.shield(...)`
+  or a private transfer from another compatible wallet.
 - The target call is constructed from validated application inputs.
 - Identity nonce allocation is deliberate and persisted when necessary.
 - Amounts remain bigint internally.

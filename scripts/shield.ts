@@ -13,6 +13,7 @@ async function main(): Promise<void> {
   ok(`Shielded at block ${result.blockNumber}`);
   console.log(`${SEPOLIA.explorerUrl}/tx/${result.transactionHash}`);
   console.log(`Spendable from proving base block ${result.spendableAtBlock}.`);
+  console.log(`With the default proving depth, wait for chain head ${result.readyAtHeadBlock}.`);
 }
 
 main().catch((error) => {

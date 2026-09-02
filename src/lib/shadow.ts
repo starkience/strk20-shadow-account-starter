@@ -7,6 +7,7 @@ import {
 } from "./invoke-shadow.js";
 import { PrivatePaymaster, type PaymasterTracking } from "./private-paymaster.js";
 import type { ProgressReporter } from "./progress.js";
+import { shieldStrk, type ShieldResult } from "./shield.js";
 
 export interface CreateShadowAccountOptions {
   /** Supply programmatically, or omit to load the server-side environment. */
@@ -33,6 +34,11 @@ export interface ShadowInvokeInput {
 export interface ShadowAccountClient {
   readonly appName: string;
   readonly defaultNonce: bigint;
+  /**
+   * Publicly shield STRK into the root account's private balance. The root
+   * account, token, amount, and timing remain visible at this onboarding edge.
+   */
+  shield(amount: bigint): Promise<ShieldResult>;
   invoke(input: ShadowInvokeInput): Promise<GenericShadowInvokeResult>;
   reconcile(trackingId: string): Promise<PaymasterTracking>;
 }
@@ -44,20 +50,35 @@ export function createShadowAccount(
   const appName = validateAppName(options?.appName ?? loaded.appName);
   const defaultNonce = validateNonce(options?.nonce ?? loaded.nonce);
   const config: ShadowRuntimeConfig = { ...loaded, appName, nonce: defaultNonce };
-  let invocationActive = false;
+  let operationActive = false;
+
+  async function runExclusive<T>(operation: () => Promise<T>): Promise<T> {
+    if (operationActive) {
+      throw new Error("A shadow-account operation is already active for this client");
+    }
+    operationActive = true;
+    try {
+      return await operation();
+    } finally {
+      operationActive = false;
+    }
+  }
+
   return {
     appName,
     defaultNonce,
+    async shield(amount): Promise<ShieldResult> {
+      const shieldAmount = validatePositiveAmount(amount, "shield amount");
+      return runExclusive(() =>
+        shieldStrk({ ...config, shieldAmount }, options?.onProgress)
+      );
+    },
     async invoke(input): Promise<GenericShadowInvokeResult> {
       const invocationConfig = input.nonce === undefined
         ? config
         : { ...config, nonce: validateNonce(input.nonce) };
-      if (invocationActive) {
-        throw new Error("A shadow invocation is already active for this client");
-      }
-      invocationActive = true;
-      try {
-        return await invokeShadowCalls(
+      return runExclusive(() =>
+        invokeShadowCalls(
           invocationConfig,
           {
             calls: input.calls,
@@ -66,10 +87,8 @@ export function createShadowAccount(
             verifyEffect: input.verifyEffect,
           },
           options?.onProgress,
-        );
-      } finally {
-        invocationActive = false;
-      }
+        )
+      );
     },
     reconcile(trackingId): Promise<PaymasterTracking> {
       return new PrivatePaymaster(config.paymasterUrl, config.paymasterApiKey)
@@ -91,6 +110,13 @@ function validateAppName(value: string): string {
 function validateNonce(value: bigint): bigint {
   if (typeof value !== "bigint" || value < 0n) {
     throw new Error("shadow nonce must be a non-negative bigint");
+  }
+  return value;
+}
+
+function validatePositiveAmount(value: bigint, label: string): bigint {
+  if (typeof value !== "bigint" || value <= 0n) {
+    throw new Error(`${label} must be a positive bigint`);
   }
   return value;
 }
