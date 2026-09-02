@@ -12,6 +12,8 @@
   "paymasterFeeMode": "sponsored_private",
   "paymasterSpecificationRepository": "https://github.com/avnu-labs/paymaster",
   "paymasterSpecificationCommit": "b93aba20dfba4d4256131c3e1a446a323464e695",
+  "ohttpEnabled": true,
+  "proverSpecVersion": "0.10.3-rc.2",
   "shadowAccountAnonymizerAddress": "0x020b9f80cba4bda1f2edbbc8cab85d9a132559f7bdef9635f16af32d95b5afde",
   "shadowAccountAnonymizerClassHash": "0x0536d72fdbd1674cabc20df594694f634ab33a8ab93fd13c7acbc200c997cc5",
   "shadowAccountClassHash": "0x038489bd44c93ee2eb8604d3a15db60781145951ebdebe356fc824b4a0385a5c",

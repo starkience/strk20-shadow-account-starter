@@ -4,6 +4,7 @@ for (const name of [
   "createShadowAccount",
   "loadRuntimeConfig",
   "PaymasterSubmissionUnknownError",
+  "toPublicInvocationError",
 ]) {
   if (typeof api[name] !== "function") {
     throw new Error(`Package export ${name} is missing`);

@@ -34,7 +34,9 @@ pnpm shadow:demo
 The first demo may publicly shield STRK and wait for its note and proving base
 to mature. That public setup transaction is separate from the shadow
 invocation. The shadow invocation itself is submitted only through the private
-paymaster.
+paymaster. The shielding helper also waits until the account balance, pool
+allowance, and current pool fee are all visible at the older proving block, so
+recent funding and pre-approval do not create an invalid proof.
 
 To consume the library from another local project:
 
@@ -49,6 +51,13 @@ pnpm add ../strk20-shadow-account-starter/strk20-shadow-account-starter-0.1.0.tg
 
 The tarball includes the compiled public entrypoint and pinned vendored SDK, so
 the integrating project does not need StarkWare package-registry credentials.
+
+Proving and discovery requests use OHTTP by default on the pinned services.
+Without a separate relay, those services still see the caller's IP address and
+decrypt the request. Production operators can pass `provingOhttp` and
+`discoveryOhttp` objects in `config` with a pinned `publicKeyConfig` and a
+`relayUrl`; explicitly pass `false` only for a custom endpoint that does not
+support OHTTP.
 
 ## 2. Add the server-side call
 
@@ -127,6 +136,21 @@ It is not a production relay API. Python and Rust projects can keep the same
 boundary by running this Node 24 integration as an authenticated sidecar.
 
 ## 5. Handle failures without creating duplicate writes
+
+Map thrown errors through the package's deliberately narrow public surface
+before returning them from an API:
+
+```ts
+import { toPublicInvocationError } from "strk20-shadow-account-starter";
+
+try {
+  return await shadow.invoke(request);
+} catch (error) {
+  const safe = toPublicInvocationError(error);
+  // Log only the code at untrusted boundaries; return `safe` to the caller.
+  return safe;
+}
+```
 
 - `PRIVATE_BALANCE_NOT_READY` means shield or wait for note maturity, then
   rebuild against a new proving block.

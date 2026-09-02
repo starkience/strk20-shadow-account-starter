@@ -152,6 +152,29 @@ test("transport loss during relay submission is reported as unknown, not safe to
   );
 });
 
+test("gateway HTTP failure after relay submission is unknown without a JSON-RPC decision", async () => {
+  let calls = 0;
+  const fakeFetch: typeof fetch = async () => {
+    calls += 1;
+    return calls === 1
+      ? Response.json({ jsonrpc: "2.0", id: 1, result: {} })
+      : Response.json({}, { status: 502 });
+  };
+  const paymaster = new PrivatePaymaster("https://paymaster.example", "secret", fakeFetch);
+  const built = await paymaster.build("0x123", "0xabc");
+
+  await assert.rejects(
+    paymaster.execute({
+      poolAddress: "0x123",
+      call: { contractAddress: "0x789", entrypoint: "apply_actions", calldata: [] },
+      proof: "0x3",
+      proofFacts: [],
+      build: built,
+    }),
+    PaymasterSubmissionUnknownError,
+  );
+});
+
 test("tracking ID reconciliation returns the relay's latest transaction", async () => {
   const requests: Array<Record<string, unknown>> = [];
   const fakeFetch: typeof fetch = async (_input, init) => {

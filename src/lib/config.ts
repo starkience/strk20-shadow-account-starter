@@ -1,4 +1,5 @@
 import { ec, shortString } from "starknet";
+import type { OhttpOption } from "../vendor-sdk.js";
 import { parseUnits } from "./amounts.js";
 import { SEPOLIA, STRK_DECIMALS } from "./constants.js";
 import { deriveDevelopmentViewingKey } from "./viewing-key.js";
@@ -18,6 +19,10 @@ export interface ShadowRuntimeConfig {
   readonly appName: string;
   readonly nonce: bigint;
   readonly maxPaymasterFee: bigint;
+  /** Defaults to OHTTP enabled for the pinned proving service. */
+  readonly provingOhttp?: OhttpOption;
+  /** Defaults to OHTTP enabled for the pinned discovery service. */
+  readonly discoveryOhttp?: OhttpOption;
 }
 
 /** Configuration used only by the included shield-and-transfer recipe. */

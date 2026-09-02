@@ -1,5 +1,6 @@
 import {
   IndexerDiscoveryProvider,
+  OhttpClient,
   ProvingService,
 } from "../src/vendor-sdk.js";
 import { RpcProvider, constants, hash } from "starknet";
@@ -11,6 +12,8 @@ import {
   PrivatePaymaster,
 } from "../src/lib/private-paymaster";
 import { sameAddress } from "../src/lib/shadow-address";
+import { DEFAULT_OHTTP_ENABLED } from "../src/lib/sdk";
+import { SEPOLIA } from "../src/lib/constants";
 
 async function main(): Promise<void> {
   heading("STRK20 shadow-account doctor");
@@ -32,6 +35,9 @@ async function main(): Promise<void> {
     PRIVATE_PAYMASTER_FEE_MODE,
     compatibility.paymasterFeeMode,
   );
+  if (DEFAULT_OHTTP_ENABLED !== compatibility.ohttpEnabled) {
+    throw new Error("default OHTTP setting no longer matches compatibility.json");
+  }
   ok("configured deployment and paymaster pins match compatibility.json");
 
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
@@ -129,6 +135,25 @@ async function main(): Promise<void> {
   const discovery = new IndexerDiscoveryProvider(config.discoveryUrl, config.poolAddress);
   if (!(await discovery.isHealthy())) throw new Error("Discovery service is unavailable");
   ok("discovery service is healthy");
+
+  const ohttpProbeBlock = (await provider.getBlockNumber()) - SEPOLIA.provingDepthBlocks;
+  const privateDiscovery = new IndexerDiscoveryProvider(
+    config.discoveryUrl,
+    config.poolAddress,
+    { ohttp: true },
+  );
+  await privateDiscovery.discoverNotes(1n, 1n, {
+    tokens: [BigInt(config.tokenAddress)],
+    blockIdentifier: ohttpProbeBlock,
+  });
+  const privateProver = new ProvingService({
+    baseUrl: config.proverUrl,
+    requestTimeoutMs: 15_000,
+    ohttpClient: new OhttpClient(config.proverUrl),
+  });
+  const proverSpecVersion = await privateProver.getSpecVersion();
+  assertExact("prover specification version", proverSpecVersion, compatibility.proverSpecVersion);
+  ok("prover and discovery OHTTP transports accept encrypted requests");
 
   ok("Privacy SDK is pinned locally; no StarkWare package credentials required");
 

@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-finalized-anonymizer-sepolia
+  group: sepolia-shadow-account-writes
   cancel-in-progress: false
 
 jobs:

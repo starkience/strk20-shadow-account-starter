@@ -1,6 +1,6 @@
 import { WarningCode } from "../vendor-sdk.js";
-import { type Call } from "starknet";
-import { approveCall, readU256, waitForSettledProvingBlock, waitForSuccessfulTransaction } from "./chain.js";
+import { RpcProvider, type Call } from "starknet";
+import { approveCall, delay, readU256, waitForSuccessfulTransaction } from "./chain.js";
 import type { ShadowConfig } from "./config.js";
 import { SEPOLIA } from "./constants.js";
 import type { ProgressReporter } from "./progress.js";
@@ -46,10 +46,15 @@ export async function shieldStrk(
     dependencyBlock = Number(receipt.block_number ?? 0);
   }
 
-  const provingBlock = await waitForSettledProvingBlock(
+  await report({
+    stage: "prepare",
+    message: "Waiting for public balance and allowance to reach the proving base",
+  });
+  const provingBlock = await waitForShieldingProvingBlock(
     provider,
+    config,
+    config.shieldAmount,
     dependencyBlock,
-    SEPOLIA.provingDepthBlocks,
   );
   await report({ stage: "prove", message: "Creating the screened shielding proof" });
   const execution = await transfers
@@ -88,4 +93,61 @@ export async function shieldStrk(
     blockNumber,
     spendableAtBlock: blockNumber + SEPOLIA.noteMaturityBlocks,
   };
+}
+
+interface PublicShieldingState {
+  readonly accountAddress: string;
+  readonly tokenAddress: string;
+  readonly poolAddress: string;
+}
+
+/**
+ * Waits until every transparent value read by the shielding proof exists at
+ * the same settled block used by the prover. This also covers a recent funding
+ * transfer or pre-existing approval whose transaction hash is unavailable.
+ */
+export async function waitForShieldingProvingBlock(
+  provider: Pick<RpcProvider, "getBlockNumber" | "callContract">,
+  config: PublicShieldingState,
+  shieldAmount: bigint,
+  dependencyBlock = 0,
+  options?: {
+    readonly depth?: number;
+    readonly timeoutMs?: number;
+    readonly pollIntervalMs?: number;
+  },
+): Promise<number> {
+  const depth = options?.depth ?? SEPOLIA.provingDepthBlocks;
+  const deadline = Date.now() + (options?.timeoutMs ?? 360_000);
+  const pollIntervalMs = options?.pollIntervalMs ?? 3_000;
+  while (Date.now() < deadline) {
+    const provingBlock = (await provider.getBlockNumber()) - depth;
+    if (provingBlock > dependencyBlock) {
+      const [poolFee, publicBalance, allowance] = await Promise.all([
+        readU256(provider, config.poolAddress, "get_fee_amount", [], provingBlock),
+        readU256(
+          provider,
+          config.tokenAddress,
+          "balanceOf",
+          [config.accountAddress],
+          provingBlock,
+        ),
+        readU256(
+          provider,
+          config.tokenAddress,
+          "allowance",
+          [config.accountAddress, config.poolAddress],
+          provingBlock,
+        ),
+      ]);
+      const requiredAtBase = shieldAmount + poolFee;
+      if (publicBalance >= requiredAtBase && allowance >= requiredAtBase) {
+        return provingBlock;
+      }
+    }
+    await delay(pollIntervalMs);
+  }
+  throw new Error(
+    "Timed out waiting for the public STRK balance and pool allowance to reach a settled proving block",
+  );
 }
