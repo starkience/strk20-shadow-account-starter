@@ -30,7 +30,11 @@ target-specific postcondition before calling its result end-to-end verified.
 ## Quick start
 
 Requirements: Node 24+, a funded and deployed Starknet Sepolia development
-account, a separate recipient address, and an AVNU private-paymaster API key.
+account that one signer can authorize, a separate recipient address, and an
+AVNU private-paymaster API key. A bare owner key cannot automate a
+guardian-protected or multisig account; use a dedicated unguarded test account
+with this version. Complete guardian and multisig signer policies are outside
+the current compatibility boundary.
 
 ```bash
 corepack enable
@@ -212,18 +216,18 @@ provenance are included. See
 The exact Sepolia addresses and versions live in
 [`compatibility.json`](compatibility.json). The doctor checks the exact pool,
 token, anonymizer, and shadow-account class hashes, plus the bound pool,
-screening policy, and invoke ABI. The pinned anonymizer is a community
-deployment with the runtime shape required by the current Sepolia pool. A newer
-anonymizer built from upstream `main` is affected by
+screening policy, invoke ABI, and exact finalization event. The pinned
+anonymizer is a starter-owned, permanently finalized deployment of the verified
+StarkWare class with the runtime shape required by the current Sepolia pool. A
+newer anonymizer built from upstream `main` is affected by
 [starkware-libs/starknet-privacy#978](https://github.com/starkware-libs/starknet-privacy/issues/978).
 
 Credit to community builder Kamal for isolating and reporting that live version
 boundary. His repository is supporting evidence, not an authoritative
 StarkWare release source. This starter reproduces the deployed class from the
 pinned StarkWare source and compiler and keeps its dependency graph on
-StarkWare's SDK and the pinned live services. The remaining trust boundary is
-that the community deployment is unfinalized and upgradeable with zero delay;
-see [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
+StarkWare's SDK and the pinned live services. The earlier community instance is
+not used by the pinned runtime; see [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 
 ## Status
 
@@ -235,11 +239,11 @@ see [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
   screening policy, invoke ABI, RPC, prover, discovery, and paymaster pool
   acceptance checks: passing on 2026-09-02.
 - OHTTP proving and discovery transport probes: passing on 2026-09-02.
+- Starter-owned immutable deployment: passing. The verified class was deployed
+  at block `14438394` and permanently finalized at block `14438419`.
 - Fresh credentialed shield → mature note → relayed shadow invoke: implemented;
-  final write evidence requires a funded Sepolia account and AVNU API key in
-  repository secrets. It must not be marked passing until that job produces a
-  transaction hash satisfying every assertion above.
-- Starter-owned immutable deployment: scripted, but still requires the funded
-  Sepolia account to deploy and finalize before the release-quality E2E run.
+  final write evidence still requires public Sepolia STRK in the dedicated E2E
+  account. It must not be marked passing until that job produces a transaction
+  hash satisfying every assertion above.
 
 Prototype, unaudited, testnet only.

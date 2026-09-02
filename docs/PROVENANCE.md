@@ -50,43 +50,47 @@ at block `14169754`.
 
 ## Deployment record
 
-The currently pinned instance was deployed in transaction
-`0x06f181d1ca19d4de1187f6a7320efa882c5355c5d900492b83a244df18cd0a47`
-at block `14169774` through the universal deployer
+The starter-owned instance was deployed in transaction
+`0x06f61944164f035e0ac907f9473dce04ce2767b9d6fc873fad391c197397fab5`
+at block `14438394` through the universal deployer
 `0x02ceed65a4bd731034c01113685c831b01c15d7d432f71afb1cf1634b53a2125`.
 
 Its decoded deployment inputs are:
 
 ```text
 class hash       0x0536d72fdbd1674cabc20df594694f634ab33a8ab93fd13c7acbc200c997cc5
-salt             0x901
+salt             0x5354524b32305f534841444f575f535441525445525f5631
 unique           false
 privacy contract 0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91
 shadow class     0x038489bd44c93ee2eb8604d3a15db60781145951ebdebe356fc824b4a0385a5c
-governance admin 0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d
+governance admin 0x05f8be55c4a0f9fb9c5bb1afc27a54ee48e1be2953d0bbc1e707e4fcbce42cdf
 ```
 
-The live getters independently confirm the pool and shadow class values.
+The deterministic UDC calculation produces the pinned address
+`0x05f23b2497e99dde2c9aed326cc36c2c41fd11ce946435157521caa4895d129f`.
+The live getters independently confirm the class, pool, and shadow class
+values.
 
-## Remaining governance boundary
+## Finalization record
 
-The source and bytecode are verified, but the currently pinned instance is not
-trustless. Its upgrade delay is zero, no `ImplementationFinalized` event has
-been emitted, and its governance admin is controlled by the community
-deployer. That admin can replace the class without delay.
+Transaction
+`0x02852c64ce244ed5182c91c4e8e8ea044b80e3b395ae3252fb973d1cce908bd2`
+at block `14438419` emitted `ImplementationFinalized` for the exact verified
+class. The same atomic transaction removed the temporary `UpgradeGovernor`
+role from the deployment account. The live role query returns false, and the
+replaceability component rejects future class replacements after finalization.
 
-For the hackathon preview, run `pnpm shadow:doctor` immediately before a write;
-it rejects any changed class or runtime shape. The release-quality resolution
-is to deploy the exact verified class under starter-controlled governance,
-finalize that implementation, update `compatibility.json`, and rerun the live
-E2E gate. That deployment/finalization is the only provenance-related step
-that needs a funded Sepolia signing account.
+This closes the earlier community-governance boundary. The starter still runs
+the doctor before writes to detect changed addresses, classes, bindings,
+services, or API shapes, but the pinned anonymizer implementation itself is no
+longer upgradeable.
 
 The maintainer command performs those two writes and verifies the resulting
 class, pool binding, shadow class, and finalization event:
 
 ```bash
-# Put ACCOUNT_ADDRESS and ACCOUNT_PRIVATE_KEY in the ignored .env file.
+# Put a fully authorized ACCOUNT_ADDRESS and ACCOUNT_PRIVATE_KEY in the
+# ignored .env file.
 pnpm anonymizer:deploy
 ```
 

@@ -7,7 +7,8 @@ for signing or viewing keys.
 
 ## 1. Prepare the server-side account
 
-Use Node 24+ and a dedicated, deployed Sepolia account. Configure:
+Use Node 24+ and a dedicated, deployed Sepolia account whose configured signer
+can authorize a transaction by itself. Configure:
 
 - `ACCOUNT_ADDRESS` and `ACCOUNT_PRIVATE_KEY`;
 - `VIEWING_KEY`, if the account is already registered with one;
@@ -16,6 +17,13 @@ Use Node 24+ and a dedicated, deployed Sepolia account. Configure:
 
 Keep every secret in the trusted process. Never put them in frontend
 environment variables, `public/`, logs, or API responses.
+
+`ACCOUNT_PRIVATE_KEY` is a single Stark-curve signer, not a wallet recovery
+phrase or a complete multisig policy. Ready/Argent accounts with an active
+guardian require the guardian signature as well, so exporting only their owner
+key is insufficient. Use a dedicated unguarded development account with this
+version. Complete guardian and multisig signer policies require an account
+adapter that the starter does not currently expose.
 
 The pinned `https://sepolia.paymaster.avnu.fi` endpoint accepts the pool in a
 credential-free read-only probe. The actual `sponsored_private` submission
