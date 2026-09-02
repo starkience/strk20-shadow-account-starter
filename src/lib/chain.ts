@@ -1,4 +1,4 @@
-import { cairo, RpcProvider, type Call } from "starknet";
+import { cairo, RpcProvider, type BlockIdentifier, type Call } from "starknet";
 import { normalizeAddress } from "./shadow-address.js";
 
 export function u256Calldata(value: bigint): string[] {
@@ -7,12 +7,16 @@ export function u256Calldata(value: bigint): string[] {
 }
 
 export async function readU256(
-  provider: RpcProvider,
+  provider: Pick<RpcProvider, "callContract">,
   contractAddress: string,
   entrypoint: string,
   calldata: string[],
+  blockIdentifier?: BlockIdentifier,
 ): Promise<bigint> {
-  const result = await provider.callContract({ contractAddress, entrypoint, calldata });
+  const result = await provider.callContract(
+    { contractAddress, entrypoint, calldata },
+    blockIdentifier,
+  );
   return BigInt(result[0] ?? "0") + (BigInt(result[1] ?? "0") << 128n);
 }
 
@@ -41,21 +45,6 @@ export async function waitForSuccessfulTransaction(
     await delay(3_000);
   }
   throw new Error(`Timed out waiting for ${transactionHash}`, { cause: lastError });
-}
-
-export async function waitForSettledProvingBlock(
-  provider: RpcProvider,
-  dependencyBlock: number,
-  depth = 10,
-  timeoutMs = 300_000,
-): Promise<number> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const provingBlock = (await provider.getBlockNumber()) - depth;
-    if (provingBlock > dependencyBlock) return provingBlock;
-    await delay(3_000);
-  }
-  throw new Error(`Timed out waiting for a proving block after block ${dependencyBlock}`);
 }
 
 export function approveCall(token: string, spender: string, amount: bigint): Call {

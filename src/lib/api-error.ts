@@ -1,7 +1,16 @@
 import { PaymasterSubmissionUnknownError } from "./private-paymaster.js";
 
+export type PublicInvocationErrorCode =
+  | "SUBMISSION_UNKNOWN"
+  | "PRIVATE_BALANCE_NOT_READY"
+  | "USER_LINKAGE"
+  | "PAYMASTER_REJECTED"
+  | "VERIFICATION_FAILED"
+  | "INVALID_INVOCATION"
+  | "INVOCATION_FAILED";
+
 export interface PublicInvocationError {
-  readonly code: string;
+  readonly code: PublicInvocationErrorCode;
   readonly message: string;
   readonly retryable: boolean;
   readonly trackingId?: string;
@@ -55,7 +64,7 @@ export function toPublicInvocationError(error: unknown): PublicInvocationError {
   };
 }
 
-function classify(message: string): string {
+function classify(message: string): PublicInvocationErrorCode {
   if (message.startsWith("Not enough mature")) return "PRIVATE_BALANCE_NOT_READY";
   if (message.includes("USER_LINKAGE")) return "USER_LINKAGE";
   if (message.startsWith("Paymaster") || message.startsWith("Private paymaster")) {

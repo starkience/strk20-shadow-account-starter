@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { toPublicInvocationError } from "../src/lib/api-error";
 import { loadPublicConfig, loadShadowConfig } from "../src/lib/config";
 import { invokeShadowTransfer } from "../src/lib/invoke-shadow";
+import { hasWorkbenchRequestGuard, isAllowedWorkbenchHost } from "./workbench-security";
 
 const publicDir = resolve(import.meta.dirname, "../public");
 const port = Number(process.env.PORT || "3000");
@@ -27,6 +28,10 @@ const server = createServer(async (request, response) => {
   );
   response.setHeader("cache-control", "no-store");
   try {
+    if (!isAllowedWorkbenchHost(request.headers.host, port)) {
+      return json(response, 403, { error: "Invalid workbench host." });
+    }
+
     if (request.method === "GET" && request.url === "/api/config") {
       const config = loadPublicConfig();
       return json(response, 200, {
@@ -43,6 +48,9 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "POST" && request.url === "/api/invoke") {
+      if (!hasWorkbenchRequestGuard(request.headers["x-shadow-workbench"])) {
+        return json(response, 403, { ok: false, error: "Missing workbench request guard." });
+      }
       if (active) return json(response, 409, { ok: false, error: "An invocation is already running." });
       active = true;
       try {

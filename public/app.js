@@ -32,7 +32,10 @@ button.addEventListener("click", async () => {
     document.querySelector("#operation-copy").textContent = steps[step];
   }, 6000);
   try {
-    const response = await fetch("/api/invoke", { method: "POST" });
+    const response = await fetch("/api/invoke", {
+      method: "POST",
+      headers: { "x-shadow-workbench": "1" },
+    });
     const body = await response.json();
     const message = typeof body.error === "string" ? body.error : body.error?.message;
     if (!response.ok || !body.ok) throw new Error(message || `Request failed (${response.status})`);

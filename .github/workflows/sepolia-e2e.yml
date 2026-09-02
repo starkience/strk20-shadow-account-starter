@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: sepolia-shadow-account-writes
+  cancel-in-progress: false
+
 jobs:
   live:
     if: ${{ vars.ENABLE_SEPOLIA_E2E == 'true' }}

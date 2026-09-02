@@ -18,7 +18,8 @@ console.log(result.shadowAddress, result.explorerUrl);
 
 The starter handles note discovery, maturity, commitments, shadow address
 derivation, proof generation, private-paymaster fees, relayed submission, and
-generic onchain verification. The integrating application supplies one
+generic onchain verification. Proving and discovery payloads use OHTTP by
+default on the pinned services. The integrating application supplies one
 target-specific postcondition before calling its result end-to-end verified.
 
 > Experimental SDK starter for hackathons, wallets, backends, and applications
@@ -132,12 +133,12 @@ configuration only after this exact Sepolia path passes for your project.
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm shadow:doctor` | Read-only live checks for RPC, contracts, prover, and discovery |
+| `pnpm shadow:doctor` | Read-only live checks for contracts, services, OHTTP, and paymaster compatibility |
 | `pnpm shadow:shield` | Publicly shield the configured amount of test STRK |
 | `pnpm shadow:invoke` | Run and verify one shadow-account transfer |
 | `pnpm shadow:demo` | Shield if necessary, wait, invoke, and verify |
 | `pnpm dev` | Start the local workbench |
-| `pnpm check` | Type-check and run the deterministic test suite |
+| `pnpm check` | Build, type-check, test, and smoke-test the packed entrypoint |
 | `pnpm anonymizer:deploy` | Maintainer-only: deploy and finalize the verified anonymizer class |
 
 ## Definition of end to end
@@ -213,6 +214,7 @@ see [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 - Live read-only Sepolia addresses, class hashes, bound-pool configuration,
   screening policy, invoke ABI, RPC, prover, discovery, and paymaster pool
   acceptance checks: passing on 2026-09-02.
+- OHTTP proving and discovery transport probes: passing on 2026-09-02.
 - Fresh credentialed shield → mature note → relayed shadow invoke: implemented;
   final write evidence requires a funded Sepolia account and AVNU API key in
   repository secrets. It must not be marked passing until that job produces a

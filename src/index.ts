@@ -14,6 +14,11 @@ export {
   type PaymasterTracking,
 } from "./lib/private-paymaster.js";
 export {
+  toPublicInvocationError,
+  type PublicInvocationError,
+  type PublicInvocationErrorCode,
+} from "./lib/api-error.js";
+export {
   loadRuntimeConfig,
   loadShadowConfig,
   type ShadowRuntimeConfig,
@@ -24,3 +29,4 @@ export type {
   ProgressStage,
   ProgressUpdate,
 } from "./lib/progress.js";
+export type { OhttpOption } from "./vendor-sdk.js";

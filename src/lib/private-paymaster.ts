@@ -190,13 +190,18 @@ export class PrivatePaymaster {
         cause: error,
       });
     }
-    if (!response.ok || body.error) {
-      const error = body.error ? record(body.error, "paymaster error") : undefined;
+    if (body.error) {
+      const error = record(body.error, "paymaster error");
       const code = typeof error?.code === "string" || typeof error?.code === "number"
         ? ` (code ${String(error.code)})`
         : "";
       throw new PaymasterRejectedError(
         `Private paymaster rejected ${method}${code}; HTTP ${response.status}`,
+      );
+    }
+    if (!response.ok) {
+      throw new PaymasterTransportError(
+        `Private paymaster returned HTTP ${response.status} without a JSON-RPC decision`,
       );
     }
     return record(body.result, "paymaster result");

@@ -51,6 +51,9 @@ That line is reached only after checking:
 The default workflow is deterministic and needs no secrets. The
 `sepolia-e2e.yml` workflow is deliberately opt-in. Set repository variable
 `ENABLE_SEPOLIA_E2E=true` and configure the secrets named in the workflow.
+Deployment and E2E workflows share one non-cancelling concurrency group so the
+dedicated account cannot submit overlapping writes or race private-note
+selection.
 
 Do not weaken assertions to make a flaky external service look green. Treat
 timeouts as “submission status unknown” when they happen after relay start and
