@@ -1,5 +1,5 @@
 import { cairo, RpcProvider, type Call } from "starknet";
-import { normalizeAddress } from "./shadow-address";
+import { normalizeAddress } from "./shadow-address.js";
 
 export function u256Calldata(value: bigint): string[] {
   const encoded = cairo.uint256(value);

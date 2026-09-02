@@ -1,17 +1,24 @@
 import {
   Open,
   WarningCode,
-} from "@starkware-libs/starknet-privacy-sdk";
+} from "../vendor-sdk.js";
 import { hash, RpcProvider, type Call } from "starknet";
-import { readU256, u256Calldata, waitForSuccessfulTransaction } from "./chain";
-import type { ShadowConfig } from "./config";
-import { SEPOLIA } from "./constants";
-import { selectMatureNotes } from "./notes";
-import { PrivatePaymaster } from "./private-paymaster";
-import type { ProgressReporter } from "./progress";
-import { noopProgress } from "./progress";
-import { createSdkContext } from "./sdk";
-import { normalizeAddress, sameAddress, shadowAddressFromCommitment } from "./shadow-address";
+import compatibility from "../../compatibility.json" with { type: "json" };
+import { readU256, u256Calldata, waitForSuccessfulTransaction } from "./chain.js";
+import type { ShadowConfig, ShadowRuntimeConfig } from "./config.js";
+import { SEPOLIA } from "./constants.js";
+import { selectMatureNotes } from "./notes.js";
+import { PrivatePaymaster } from "./private-paymaster.js";
+import type { ProgressReporter } from "./progress.js";
+import { noopProgress } from "./progress.js";
+import { createSdkContext } from "./sdk.js";
+import { normalizeAddress, sameAddress, shadowAddressFromCommitment } from "./shadow-address.js";
+
+export interface ShadowVerificationContext {
+  readonly provider: RpcProvider;
+  readonly shadowAddress: string;
+  readonly receipt: Awaited<ReturnType<typeof waitForSuccessfulTransaction>>;
+}
 
 export interface GenericShadowInvokeResult {
   readonly transactionHash: string;
@@ -22,6 +29,8 @@ export interface GenericShadowInvokeResult {
   readonly nonce: string;
   readonly outerSender: string;
   readonly deployedNow: boolean;
+  /** True only when the caller supplied and passed an application-specific check. */
+  readonly effectVerified: boolean;
   readonly explorerUrl: string;
 }
 
@@ -31,11 +40,11 @@ export interface ShadowCallRequest {
   readonly fundingAmount: bigint;
   /** Creates an open note that collects any token left in the shadow account. */
   readonly collectRemainder?: boolean;
-  readonly verifyEffect?: (context: {
-    provider: RpcProvider;
-    shadowAddress: string;
-    receipt: Awaited<ReturnType<typeof waitForSuccessfulTransaction>>;
-  }) => Promise<void>;
+  /**
+   * Checks the target application's state change after the generic shadow
+   * invariants pass. Required before presenting a result as end-to-end verified.
+   */
+  readonly verifyEffect?: (context: ShadowVerificationContext) => Promise<void>;
 }
 
 export interface ShadowInvokeResult extends GenericShadowInvokeResult {
@@ -43,19 +52,36 @@ export interface ShadowInvokeResult extends GenericShadowInvokeResult {
   readonly amount: string;
 }
 
+export interface InvokeShadowDependencies {
+  readonly createSdkContext: typeof createSdkContext;
+  readonly createPaymaster: (
+    config: ShadowRuntimeConfig,
+  ) => Pick<PrivatePaymaster, "build" | "execute">;
+  readonly waitForSuccessfulTransaction: typeof waitForSuccessfulTransaction;
+}
+
+const productionDependencies: InvokeShadowDependencies = {
+  createSdkContext,
+  createPaymaster: (config) => new PrivatePaymaster(config.paymasterUrl, config.paymasterApiKey),
+  waitForSuccessfulTransaction,
+};
+
 export async function invokeShadowCalls(
-  config: ShadowConfig,
+  config: ShadowRuntimeConfig,
   request: ShadowCallRequest,
   report: ProgressReporter = noopProgress,
+  dependencies: InvokeShadowDependencies = productionDependencies,
 ): Promise<GenericShadowInvokeResult> {
   if (request.calls.length === 0) throw new Error("A shadow invocation needs at least one call");
+  if (typeof request.fundingAmount !== "bigint") {
+    throw new Error("fundingAmount must be a bigint");
+  }
   if (request.fundingAmount < 0n) throw new Error("fundingAmount must not be negative");
-  const { provider, transfers } = createSdkContext(config);
-  const paymaster = new PrivatePaymaster(
-    config.paymasterUrl,
-    config.paymasterApiKey,
-  );
+  const { provider, transfers } = dependencies.createSdkContext(config);
+  const paymaster = dependencies.createPaymaster(config);
 
+  await report({ stage: "prepare", message: "Checking the pinned shadow-account runtime" });
+  await assertInvocationCompatibility(provider, config);
   await report({ stage: "prepare", message: "Requesting private relay terms" });
   const relayTerms = await paymaster.build(config.poolAddress, config.tokenAddress);
   const fee = relayTerms.fee;
@@ -134,7 +160,10 @@ export async function invokeShadowCalls(
   });
 
   await report({ stage: "confirm", message: "Waiting for Starknet confirmation" });
-  const receipt = await waitForSuccessfulTransaction(provider, submitted.transactionHash);
+  const receipt = await dependencies.waitForSuccessfulTransaction(
+    provider,
+    submitted.transactionHash,
+  );
   const blockNumber = Number(receipt.block_number ?? 0);
   await report({ stage: "verify", message: "Verifying caller, registry, transfer, and relay invariants" });
 
@@ -176,8 +205,46 @@ export async function invokeShadowCalls(
     nonce: config.nonce.toString(),
     outerSender,
     deployedNow,
+    effectVerified: request.verifyEffect !== undefined,
     explorerUrl: `${SEPOLIA.explorerUrl}/tx/${submitted.transactionHash}`,
   };
+}
+
+async function assertInvocationCompatibility(
+  provider: Pick<RpcProvider, "callContract" | "getClassHashAt">,
+  config: ShadowRuntimeConfig,
+): Promise<void> {
+  const anonymizerClass = await provider.getClassHashAt(config.anonymizerAddress);
+  if (!sameAddress(anonymizerClass, compatibility.shadowAccountAnonymizerClassHash)) {
+    throw new Error("Shadow anonymizer class no longer matches compatibility.json");
+  }
+  const [boundPool] = await provider.callContract({
+    contractAddress: config.anonymizerAddress,
+    entrypoint: "get_privacy_contract",
+    calldata: [],
+  });
+  if (!sameAddress(boundPool ?? 0n, config.poolAddress)) {
+    throw new Error("Shadow anonymizer is not bound to the configured privacy pool");
+  }
+  const [shadowClass] = await provider.callContract({
+    contractAddress: config.anonymizerAddress,
+    entrypoint: "get_shadow_account_class_hash",
+    calldata: [],
+  });
+  if (!sameAddress(shadowClass ?? 0n, compatibility.shadowAccountClassHash)) {
+    throw new Error("Shadow anonymizer uses an unexpected shadow-account class");
+  }
+  const [screeningPolicy] = await provider.callContract({
+    contractAddress: config.poolAddress,
+    entrypoint: "get_open_note_screening_policy",
+    calldata: [config.anonymizerAddress],
+  });
+  if (!sameAddress(
+    screeningPolicy ?? -1n,
+    compatibility.anonymizerOpenNoteScreeningPolicyValue,
+  )) {
+    throw new Error("Shadow anonymizer screening policy no longer matches compatibility.json");
+  }
 }
 
 export async function invokeShadowTransfer(

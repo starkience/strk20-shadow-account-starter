@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   const config = loadShadowConfig();
   try {
     const result = await invokeShadowTransfer(config, progress);
-    ok(`Verified: ${result.explorerUrl}`);
+    verified(result.explorerUrl);
     return;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -29,7 +29,12 @@ async function main(): Promise<void> {
   }
   process.stdout.write("\n");
   const result = await invokeShadowTransfer(config, progress);
-  ok(`Verified: ${result.explorerUrl}`);
+  verified(result.explorerUrl);
+}
+
+function verified(explorerUrl: string): void {
+  ok("Shadow-account invocation verified end to end");
+  console.log(explorerUrl);
 }
 
 main().catch((error) => {

@@ -14,9 +14,6 @@ importers:
       '@starknet-io/starknet-types-0101':
         specifier: npm:@starknet-io/types-js@0.10.3
         version: '@starknet-io/types-js@0.10.3'
-      '@starkware-libs/starknet-privacy-sdk':
-        specifier: link:vendor/privacy-sdk
-        version: link:vendor/privacy-sdk
       hpke:
         specifier: 1.0.6
         version: 1.0.6

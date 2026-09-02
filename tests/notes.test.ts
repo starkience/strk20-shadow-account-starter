@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Note } from "@starkware-libs/starknet-privacy-sdk";
+import type { Note } from "../src/vendor-sdk.js";
 import { selectMatureNotes } from "../src/lib/notes";
 
 function note(amount: bigint, created: number, open = false): Note {

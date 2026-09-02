@@ -4,7 +4,7 @@ A small, friendly starter for calling Starknet contracts through STRK20 shadow
 accounts on Sepolia.
 
 ```ts
-import { createShadowAccount } from "./src/lib/shadow.js";
+import { createShadowAccount } from "./src/index.js";
 
 const shadow = createShadowAccount();
 
@@ -18,7 +18,8 @@ console.log(result.shadowAddress, result.explorerUrl);
 
 The starter handles note discovery, maturity, commitments, shadow address
 derivation, proof generation, private-paymaster fees, relayed submission, and
-onchain verification.
+generic onchain verification. The integrating application supplies one
+target-specific postcondition before calling its result end-to-end verified.
 
 > Experimental SDK starter for hackathons, wallets, backends, and applications
 > that intentionally control a dedicated Starknet account. A normal browser
@@ -68,6 +69,14 @@ pnpm dev
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Keys stay in the local
 Node process; the page never receives them.
 
+For an application integration rather than the included transfer recipe, see
+[`docs/INTEGRATION.md`](docs/INTEGRATION.md). Generic calls do not require the
+demo-only recipient, spend, or shield configuration.
+
+`pnpm build` creates the typed `dist/` library entrypoint. `pnpm pack` produces
+a self-contained installable tarball containing that entrypoint and the pinned
+vendored SDK; the artifact is validated without StarkWare package credentials.
+
 ## What the example does
 
 ```text
@@ -86,10 +95,10 @@ you intentionally want a fresh address and do not need persistent app state.
 
 ## Use your own contract call
 
-The public integration point is [`src/lib/shadow.ts`](src/lib/shadow.ts):
+The public integration point is [`src/index.ts`](src/index.ts):
 
 ```ts
-import { createShadowAccount } from "./src/lib/shadow.js";
+import { createShadowAccount } from "./src/index.js";
 
 const shadow = createShadowAccount({
   onProgress: ({ message }) => console.log(message),
@@ -108,6 +117,10 @@ await shadow.invoke({
   fundingAmount: 0n,
   // Enable when the called contract may leave STRK in the shadow account.
   collectRemainder: false,
+  // Assert your application's state change before claiming E2E success.
+  verifyEffect: async ({ provider, shadowAddress }) => {
+    // Read your contract and throw unless the expected effect is present.
+  },
 });
 ```
 
@@ -125,6 +138,7 @@ configuration only after this exact Sepolia path passes for your project.
 | `pnpm shadow:demo` | Shield if necessary, wait, invoke, and verify |
 | `pnpm dev` | Start the local workbench |
 | `pnpm check` | Type-check and run the deterministic test suite |
+| `pnpm anonymizer:deploy` | Maintainer-only: deploy and finalize the verified anonymizer class |
 
 ## Definition of end to end
 
@@ -175,25 +189,35 @@ provenance are included. See
 ## Pinned live stack
 
 The exact Sepolia addresses and versions live in
-[`compatibility.json`](compatibility.json). The anonymizer is pinned to the
-primer-pattern deployment known to work with the current Sepolia pool. A newer
+[`compatibility.json`](compatibility.json). The doctor checks the exact pool,
+token, anonymizer, and shadow-account class hashes, plus the bound pool,
+screening policy, and invoke ABI. The pinned anonymizer is a community
+deployment with the runtime shape required by the current Sepolia pool. A newer
 anonymizer built from upstream `main` is affected by
 [starkware-libs/starknet-privacy#978](https://github.com/starkware-libs/starknet-privacy/issues/978).
 
-Credit to Kamal for isolating that live version boundary and publishing the
-first reproducible Sepolia shadow-spend evidence. This starter keeps his useful
-compatibility finding while replacing root-account submission, floating helper
-exports, `Number` amount parsing, and spend-only setup with stricter paths.
+Credit to community builder Kamal for isolating and reporting that live version
+boundary. His repository is supporting evidence, not an authoritative
+StarkWare release source. This starter reproduces the deployed class from the
+pinned StarkWare source and compiler and keeps its dependency graph on
+StarkWare's SDK and the pinned live services. The remaining trust boundary is
+that the community deployment is unfinalized and upgradeable with zero delay;
+see [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 
 ## Status
 
 - Clean public install without StarkWare package credentials: passing.
 - Vendored SDK build, TypeScript check, and deterministic tests: passing.
-- Live read-only Sepolia RPC/contract/prover/discovery checks: passing on
-  2026-08-31.
+- Anonymizer Sierra/CASM reproduction against its onchain declaration:
+  passing with the exact upstream compiler pin.
+- Live read-only Sepolia addresses, class hashes, bound-pool configuration,
+  screening policy, invoke ABI, RPC, prover, and discovery checks: passing on
+  2026-09-02.
 - Fresh credentialed shield → mature note → relayed shadow invoke: implemented;
   final write evidence requires a funded Sepolia account and AVNU API key in
   repository secrets. It must not be marked passing until that job produces a
   transaction hash satisfying every assertion above.
+- Starter-owned immutable deployment: scripted, but still requires the funded
+  Sepolia account to deploy and finalize before the release-quality E2E run.
 
 Prototype, unaudited, testnet only.

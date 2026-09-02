@@ -1,9 +1,10 @@
 # End-to-end release gate
 
 The deterministic suite verifies encoding, amount safety, maturity selection,
-the upstream Cairo/TypeScript address vector, and the private-paymaster request
-shape. It cannot prove that the currently deployed Sepolia services accept a
-write.
+the upstream Cairo/TypeScript address vector, private-paymaster request shape,
+submission uncertainty, secret-safe API errors, and the shadow orchestration's
+relay and postcondition gates. It cannot prove that the currently deployed
+Sepolia services accept a write.
 
 ## Live prerequisites
 
@@ -12,6 +13,10 @@ write.
 - AVNU private-paymaster API key.
 - The pinned pool, anonymizer, prover, and discovery service passing
   `pnpm shadow:doctor`.
+
+The current community deployment may be used for an experimental hackathon
+write after the doctor passes. A release-quality evidence run must use the
+starter-owned finalized deployment described in [`PROVENANCE.md`](PROVENANCE.md).
 
 ## Run
 
