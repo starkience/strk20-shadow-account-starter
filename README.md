@@ -3,8 +3,9 @@
 Run Starknet contract calls from STRK20 shadow accounts on Sepolia.
 
 This starter is for a trusted Node.js backend that controls a dedicated test
-account. It handles private-note discovery, maturity, proof generation, shadow
-address derivation, AVNU private-paymaster submission, and onchain verification.
+account. It handles private-note discovery, maturity, remote proving through
+Starkscan, shadow-address derivation, AVNU private-paymaster submission, and
+onchain verification.
 
 > Hackathon preview: experimental, unaudited, and Sepolia only. Do not use
 > production keys or funds.
@@ -15,7 +16,7 @@ Use this starter when you have:
 
 - Node.js 24 or newer;
 - a funded, deployed Sepolia account controlled by one private key; and
-- an AVNU private-paymaster API key.
+- Starkscan prover and AVNU private-paymaster API keys.
 
 It does not support guardian or multisig signing, mainnet, or private funding in
 tokens other than STRK. A browser dapp must not collect user keys; use
@@ -37,21 +38,24 @@ Set these values in `.env`:
 ACCOUNT_ADDRESS=0x...
 ACCOUNT_PRIVATE_KEY=0x...
 RECIPIENT_ADDRESS=0x...
+STARKSCAN_API_KEY=...
 AVNU_PAYMASTER_API_KEY=...
 ```
 
 Use a dedicated test account, keep `.env` private, and make
-`RECIPIENT_ADDRESS` different from `ACCOUNT_ADDRESS`.
+`RECIPIENT_ADDRESS` different from `ACCOUNT_ADDRESS`. Each team supplies its
+own service credentials; none are bundled with the starter.
 
 ```bash
 pnpm shadow:doctor
 pnpm shadow:demo
 ```
 
-`shadow:doctor` checks the pinned Sepolia stack without writing onchain.
-`shadow:demo` privately invokes a STRK transfer. If private STRK is unavailable,
-it first performs the public shield transaction and waits until the note is
-usable.
+`shadow:doctor` checks the pinned Sepolia stack without spending a proof or
+writing onchain. `shadow:demo` sends an asynchronous proof job through
+Starkscan, then privately invokes a STRK transfer. If private STRK is
+unavailable, it first performs the public shield transaction and waits until
+the note is usable.
 
 For the local workbench, run `pnpm dev` and open
 [127.0.0.1:3000](http://127.0.0.1:3000). Keys stay in the Node process.
@@ -113,7 +117,7 @@ nonce policy, concurrency, safe errors, and backend API design.
 
 ## Rules that integrations must keep
 
-- Keep signing keys, viewing keys, and the AVNU key on the trusted server.
+- Keep signing keys, viewing keys, and both service API keys on the trusted server.
 - Submit shadow invocations only through the private paymaster.
 - Keep amounts as `bigint` from parsing through calldata.
 - Build calls from validated application inputs; do not expose an arbitrary
@@ -127,7 +131,8 @@ The private invocation hides the funding notes and keeps the root account from
 being the target contract's caller or the outer transaction sender. The shadow
 address, its calls, target, amounts, application state, and timing remain
 public. The initial shield transaction also exposes the root account, token,
-amount, and timing. This is not an anonymity guarantee.
+amount, and timing. The configured prover and discovery services process the
+private requests sent to them. This is not an anonymity guarantee.
 
 ## Release status
 
@@ -135,8 +140,10 @@ Ready for Sepolia hackathon use within the compatibility boundary above:
 
 - clean install and deterministic checks pass without StarkWare registry access;
 - the SDK, contracts, addresses, class hashes, services, and compiler are pinned;
+- Starkscan submission, idempotency, polling, result, and delivery-uncertainty
+  behavior is covered by deterministic tests;
 - the starter-owned anonymizer is permanently finalized; and
-- the full shield → mature note → private-paymaster invocation gate passed on
+- the six-assertion Sepolia shadow-account gate passed on
   2026-09-02: [workflow run](https://github.com/starkience/strk20-shadow-account-starter/actions/runs/33630618461),
   [invocation transaction](https://sepolia.voyager.online/tx/0x07e2a81742562aad7d5eeef460ba0a6c669b2aa08a51a4db821c3cafa3c2ecd8).
 

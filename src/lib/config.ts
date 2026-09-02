@@ -14,14 +14,13 @@ export interface ShadowRuntimeConfig {
   readonly tokenAddress: string;
   readonly anonymizerAddress: string;
   readonly proverUrl: string;
+  readonly proverApiKey: string;
   readonly discoveryUrl: string;
   readonly paymasterUrl: string;
   readonly paymasterApiKey: string;
   readonly appName: string;
   readonly nonce: bigint;
   readonly maxPaymasterFee: bigint;
-  /** Defaults to OHTTP enabled for the pinned proving service. */
-  readonly provingOhttp?: OhttpOption;
   /** Defaults to OHTTP enabled for the pinned discovery service. */
   readonly discoveryOhttp?: OhttpOption;
 }
@@ -95,7 +94,7 @@ export function loadPublicConfig(): PublicShadowConfig {
       "SHADOW_ACCOUNT_ANONYMIZER_ADDRESS",
       SEPOLIA.shadowAccountAnonymizerAddress,
     ),
-    proverUrl: value("PROVER_URL", SEPOLIA.proverUrl),
+    proverUrl: value("STARKSCAN_PROVER_URL", SEPOLIA.proverUrl),
     discoveryUrl: value("DISCOVERY_URL", SEPOLIA.discoveryUrl),
     paymasterUrl: value("AVNU_PAYMASTER_URL", SEPOLIA.paymasterUrl),
     appName: appName(),
@@ -123,6 +122,7 @@ export function loadRuntimeConfig(): ShadowRuntimeConfig {
     accountAddress,
     accountPrivateKey,
     viewingKey,
+    proverApiKey: required("STARKSCAN_API_KEY"),
     paymasterApiKey: required("AVNU_PAYMASTER_API_KEY"),
     maxPaymasterFee,
   };

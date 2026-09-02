@@ -5,8 +5,9 @@ import {
 import { Account, RpcProvider } from "starknet";
 import type { ShadowRuntimeConfig } from "./config.js";
 import { SEPOLIA } from "./constants.js";
+import { StarkscanProofProvider } from "./starkscan-prover.js";
 
-export const DEFAULT_OHTTP_ENABLED = true;
+export const DEFAULT_DISCOVERY_OHTTP_ENABLED = true;
 
 export function createSdkContext(config: ShadowRuntimeConfig) {
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
@@ -19,18 +20,17 @@ export function createSdkContext(config: ShadowRuntimeConfig) {
   const transfers = createPrivateTransfers({
     account,
     viewingKeyProvider: { getViewingKey: async () => config.viewingKey },
-    provingProvider: {
-      url: config.proverUrl,
+    provingProvider: new StarkscanProofProvider({
+      endpoint: config.proverUrl,
+      apiKey: config.proverApiKey,
       chainId: SEPOLIA.chainId,
-      nodeUrl: config.rpcUrl,
-      requestTimeoutMs: 180_000,
-      ohttp: config.provingOhttp ?? DEFAULT_OHTTP_ENABLED,
-      retry: { maxRetries: 3, baseDelayMs: 1_000 },
-    },
+      rpcUrl: config.rpcUrl,
+      poolAddress: config.poolAddress,
+    }),
     discoveryProvider: new IndexerDiscoveryProvider(
       config.discoveryUrl,
       config.poolAddress,
-      { ohttp: config.discoveryOhttp ?? DEFAULT_OHTTP_ENABLED },
+      { ohttp: config.discoveryOhttp ?? DEFAULT_DISCOVERY_OHTTP_ENABLED },
     ),
     poolContractAddress: config.poolAddress,
     shadowAccountAnonymizerAddress: config.anonymizerAddress,

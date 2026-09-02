@@ -1,7 +1,9 @@
 import { PaymasterSubmissionUnknownError } from "./private-paymaster.js";
+import { StarkscanProofDeliveryUnknownError } from "./starkscan-prover.js";
 
 export type PublicInvocationErrorCode =
   | "SUBMISSION_UNKNOWN"
+  | "PROOF_DELIVERY_UNKNOWN"
   | "PRIVATE_BALANCE_NOT_READY"
   | "USER_LINKAGE"
   | "PAYMASTER_REJECTED"
@@ -15,6 +17,7 @@ export interface PublicInvocationError {
   readonly retryable: boolean;
   readonly trackingId?: string;
   readonly transactionHash?: string;
+  readonly proverJobId?: string;
 }
 
 const SAFE_MESSAGES = [
@@ -46,6 +49,15 @@ export function toPublicInvocationError(error: unknown): PublicInvocationError {
       retryable: false,
       ...(error.trackingId ? { trackingId: error.trackingId } : {}),
       ...(error.transactionHash ? { transactionHash: error.transactionHash } : {}),
+    };
+  }
+
+  if (error instanceof StarkscanProofDeliveryUnknownError) {
+    return {
+      code: "PROOF_DELIVERY_UNKNOWN",
+      message: "Proof delivery status is unknown. Do not retry automatically; inspect the trusted server logs.",
+      retryable: false,
+      ...(error.jobId ? { proverJobId: error.jobId } : {}),
     };
   }
 

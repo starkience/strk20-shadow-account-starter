@@ -42,6 +42,7 @@ const server = createServer(async (request, response) => {
           "ACCOUNT_ADDRESS",
           "ACCOUNT_PRIVATE_KEY",
           "RECIPIENT_ADDRESS",
+          "STARKSCAN_API_KEY",
           "AVNU_PAYMASTER_API_KEY",
         ].every((name) => Boolean(process.env[name]?.trim())),
       });

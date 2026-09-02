@@ -1,7 +1,5 @@
 import {
   IndexerDiscoveryProvider,
-  OhttpClient,
-  ProvingService,
 } from "../src/vendor-sdk.js";
 import { RpcProvider, constants, hash } from "starknet";
 import compatibility from "../compatibility.json" with { type: "json" };
@@ -12,8 +10,12 @@ import {
   PrivatePaymaster,
 } from "../src/lib/private-paymaster";
 import { sameAddress } from "../src/lib/shadow-address";
-import { DEFAULT_OHTTP_ENABLED } from "../src/lib/sdk";
-import { SEPOLIA } from "../src/lib/constants";
+import { DEFAULT_DISCOVERY_OHTTP_ENABLED } from "../src/lib/sdk";
+import {
+  SEPOLIA,
+  STARKSCAN_NETWORK,
+  STARKSCAN_PROVER_PROVIDER,
+} from "../src/lib/constants";
 import { hasImplementationFinalizedEvent } from "./anonymizer-deployment";
 
 async function main(): Promise<void> {
@@ -31,15 +33,18 @@ async function main(): Promise<void> {
     compatibility.shadowAccountAnonymizerAddress,
   );
   assertExact("private paymaster URL", config.paymasterUrl, compatibility.paymasterUrl);
+  assertExact("Starkscan prover URL", config.proverUrl, compatibility.proverUrl);
+  assertExact("Starkscan provider", STARKSCAN_PROVER_PROVIDER, compatibility.proverProvider);
+  assertExact("Starkscan network", STARKSCAN_NETWORK, compatibility.proverNetwork);
   assertExact(
     "private paymaster fee mode",
     PRIVATE_PAYMASTER_FEE_MODE,
     compatibility.paymasterFeeMode,
   );
-  if (DEFAULT_OHTTP_ENABLED !== compatibility.ohttpEnabled) {
-    throw new Error("default OHTTP setting no longer matches compatibility.json");
+  if (DEFAULT_DISCOVERY_OHTTP_ENABLED !== compatibility.discoveryOhttpEnabled) {
+    throw new Error("default discovery OHTTP setting no longer matches compatibility.json");
   }
-  ok("configured deployment and paymaster pins match compatibility.json");
+  ok("configured deployment, prover, and paymaster pins match compatibility.json");
 
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
   const chainId = await provider.getChainId();
@@ -133,10 +138,6 @@ async function main(): Promise<void> {
     `anonymizer is bound to the pool with ${compatibility.anonymizerOpenNoteScreeningPolicy} screening and the pinned invoke ABI`,
   );
 
-  const prover = new ProvingService({ baseUrl: config.proverUrl, requestTimeoutMs: 15_000 });
-  if (!(await prover.isHealthy())) throw new Error("Proving service is unavailable");
-  ok("proving service is healthy");
-
   const discovery = new IndexerDiscoveryProvider(config.discoveryUrl, config.poolAddress);
   if (!(await discovery.isHealthy())) throw new Error("Discovery service is unavailable");
   ok("discovery service is healthy");
@@ -151,14 +152,7 @@ async function main(): Promise<void> {
     tokens: [BigInt(config.tokenAddress)],
     blockIdentifier: ohttpProbeBlock,
   });
-  const privateProver = new ProvingService({
-    baseUrl: config.proverUrl,
-    requestTimeoutMs: 15_000,
-    ohttpClient: new OhttpClient(config.proverUrl),
-  });
-  const proverSpecVersion = await privateProver.getSpecVersion();
-  assertExact("prover specification version", proverSpecVersion, compatibility.proverSpecVersion);
-  ok("prover and discovery OHTTP transports accept encrypted requests");
+  ok("discovery OHTTP transport accepts encrypted requests");
 
   ok("Privacy SDK is pinned locally; no StarkWare package credentials required");
 
@@ -178,6 +172,10 @@ async function main(): Promise<void> {
   }
 
   const paymasterApiKey = process.env.AVNU_PAYMASTER_API_KEY?.trim() ?? "";
+  const proverApiKey = process.env.STARKSCAN_API_KEY?.trim() ?? "";
+  if (proverApiKey) {
+    ok("Starkscan prover credentials are configured; proving is checked by the write flow");
+  }
   const paymaster = new PrivatePaymaster(config.paymasterUrl, paymasterApiKey);
   const publicQuote = await paymaster.probePool(config.poolAddress, config.tokenAddress);
   if (publicQuote && !sameAddress(publicQuote.token, config.tokenAddress)) {
@@ -193,7 +191,13 @@ async function main(): Promise<void> {
     ok("private paymaster credentials and quote schema are valid");
   }
 
-  const missing = ["ACCOUNT_ADDRESS", "ACCOUNT_PRIVATE_KEY", "RECIPIENT_ADDRESS", "AVNU_PAYMASTER_API_KEY"]
+  const missing = [
+    "ACCOUNT_ADDRESS",
+    "ACCOUNT_PRIVATE_KEY",
+    "RECIPIENT_ADDRESS",
+    "STARKSCAN_API_KEY",
+    "AVNU_PAYMASTER_API_KEY",
+  ]
     .filter((name) => !process.env[name]?.trim());
   if (missing.length) {
     warn(`Demo credentials still needed: ${missing.join(", ")}`);
