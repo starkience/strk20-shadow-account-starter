@@ -1,6 +1,5 @@
 import { RpcProvider } from "starknet";
 import { loadShadowConfig } from "../src/lib/config";
-import { SEPOLIA } from "../src/lib/constants";
 import { invokeShadowTransfer } from "../src/lib/invoke-shadow";
 import { shieldStrk } from "../src/lib/shield";
 import { delay } from "../src/lib/chain";
@@ -21,7 +20,7 @@ async function main(): Promise<void> {
 
   const shield = await shieldStrk(config, progress);
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
-  const requiredHead = shield.spendableAtBlock + SEPOLIA.provingDepthBlocks;
+  const requiredHead = shield.readyAtHeadBlock;
   while ((await provider.getBlockNumber()) < requiredHead) {
     const head = await provider.getBlockNumber();
     process.stdout.write(`\rWaiting for note maturity: ${head}/${requiredHead}`);

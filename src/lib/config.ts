@@ -1,7 +1,8 @@
-import { ec, shortString } from "starknet";
+import { ec, shortString, validateAndParseAddress } from "starknet";
 import type { OhttpOption } from "../vendor-sdk.js";
 import { parseUnits } from "./amounts.js";
 import { SEPOLIA, STRK_DECIMALS } from "./constants.js";
+import { normalizeAddress } from "./shadow-address.js";
 import { deriveDevelopmentViewingKey } from "./viewing-key.js";
 
 export interface ShadowRuntimeConfig {
@@ -25,11 +26,15 @@ export interface ShadowRuntimeConfig {
   readonly discoveryOhttp?: OhttpOption;
 }
 
+/** Runtime configuration plus the amount used by the public shielding edge. */
+export interface ShieldConfig extends ShadowRuntimeConfig {
+  readonly shieldAmount: bigint;
+}
+
 /** Configuration used only by the included shield-and-transfer recipe. */
-export interface ShadowConfig extends ShadowRuntimeConfig {
+export interface ShadowConfig extends ShieldConfig {
   readonly recipientAddress: string;
   readonly spendAmount: bigint;
-  readonly shieldAmount: bigint;
 }
 
 export interface PublicShadowConfig {
@@ -57,9 +62,9 @@ function required(name: string): string {
 function address(name: string, fallback?: string): string {
   const result = value(name, fallback);
   try {
-    const parsed = BigInt(result);
-    if (parsed <= 0n) throw new Error("zero");
-    return `0x${parsed.toString(16)}`;
+    const parsed = validateAndParseAddress(result);
+    if (BigInt(parsed) === 0n) throw new Error("zero");
+    return normalizeAddress(parsed);
   } catch {
     throw new Error(`${name} must be a non-zero Starknet address`);
   }

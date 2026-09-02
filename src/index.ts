@@ -21,9 +21,13 @@ export {
 export {
   loadRuntimeConfig,
   loadShadowConfig,
+  type ShieldConfig,
   type ShadowRuntimeConfig,
   type ShadowConfig,
 } from "./lib/config.js";
+export { parseUnits, formatUnits } from "./lib/amounts.js";
+export { STRK_DECIMALS } from "./lib/constants.js";
+export type { ShieldResult } from "./lib/shield.js";
 export type {
   ProgressReporter,
   ProgressStage,

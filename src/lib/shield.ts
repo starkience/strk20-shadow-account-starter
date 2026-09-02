@@ -1,7 +1,7 @@
 import { WarningCode } from "../vendor-sdk.js";
 import { RpcProvider, type Call } from "starknet";
 import { approveCall, delay, readU256, waitForSuccessfulTransaction } from "./chain.js";
-import type { ShadowConfig } from "./config.js";
+import type { ShieldConfig } from "./config.js";
 import { SEPOLIA } from "./constants.js";
 import type { ProgressReporter } from "./progress.js";
 import { noopProgress } from "./progress.js";
@@ -10,12 +10,15 @@ import { createSdkContext } from "./sdk.js";
 export interface ShieldResult {
   readonly transactionHash: string;
   readonly blockNumber: number;
+  /** First proving-base block at which the new note satisfies maturity. */
   readonly spendableAtBlock: number;
+  /** Chain head required for the default ten-block-deep proving base. */
+  readonly readyAtHeadBlock: number;
 }
 
 /** Public Sepolia onboarding edge: approve, register if needed, and shield STRK. */
 export async function shieldStrk(
-  config: ShadowConfig,
+  config: ShieldConfig,
   report: ProgressReporter = noopProgress,
 ): Promise<ShieldResult> {
   const { provider, account, transfers } = createSdkContext(config);
@@ -92,6 +95,8 @@ export async function shieldStrk(
     transactionHash: submitted.transaction_hash,
     blockNumber,
     spendableAtBlock: blockNumber + SEPOLIA.noteMaturityBlocks,
+    readyAtHeadBlock:
+      blockNumber + SEPOLIA.noteMaturityBlocks + SEPOLIA.provingDepthBlocks,
   };
 }
 

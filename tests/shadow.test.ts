@@ -44,3 +44,10 @@ test("shadow identity inputs reject unsafe or ambiguous values before network wo
     /must not be empty/,
   );
 });
+
+test("public shielding rejects unsafe amounts before network work", async () => {
+  const client = createShadowAccount({ config: runtimeConfig });
+  await assert.rejects(client.shield(0n), /positive bigint/);
+  await assert.rejects(client.shield(-1n), /positive bigint/);
+  await assert.rejects(client.shield(1 as unknown as bigint), /positive bigint/);
+});

@@ -19,7 +19,8 @@ export interface PublicInvocationError {
 
 const SAFE_MESSAGES = [
   /^A shadow invocation needs at least one call$/,
-  /^A shadow invocation is already active for this client$/,
+  /^A shadow-account operation is already active for this client$/,
+  /^shield amount must be a positive bigint$/,
   /^fundingAmount must be a bigint$/,
   /^fundingAmount must not be negative$/,
   /^Not enough mature shielded STRK\./,

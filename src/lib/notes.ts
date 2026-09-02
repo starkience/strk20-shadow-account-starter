@@ -36,7 +36,7 @@ export function selectMatureNotes(
   }
   if (selectedAmount < required) {
     throw new Error(
-      `Not enough mature shielded STRK. Need ${required}, mature ${matureBalance}, total ${privateBalance}. Run pnpm shadow:shield or wait for note maturity.`,
+      `Not enough mature shielded STRK. Need ${required}, mature ${matureBalance}, total ${privateBalance}. Run shadow.shield(...) (or pnpm shadow:shield in the starter) or wait for note maturity.`,
     );
   }
   return { notes: selected, selectedAmount, matureBalance, privateBalance };

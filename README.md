@@ -129,6 +129,26 @@ The starter currently uses STRK as both the shadow funding token and private
 paymaster-fee token to keep the first integration narrow. Generalize the token
 configuration only after this exact Sepolia path passes for your project.
 
+If the dedicated account starts with public STRK but no private balance, a
+package consumer can perform the same public onboarding edge as
+`pnpm shadow:shield`:
+
+```ts
+import {
+  createShadowAccount,
+  parseUnits,
+  STRK_DECIMALS,
+} from "strk20-shadow-account-starter";
+
+const shadow = createShadowAccount();
+const shielded = await shadow.shield(parseUnits("5", STRK_DECIMALS));
+
+console.log(`Wait for chain head ${shielded.readyAtHeadBlock} before invoking`);
+```
+
+Shielding exposes the root account, token, amount, and timing. It is a one-time
+funding/onboarding operation, not the private shadow invocation.
+
 ## Commands
 
 | Command | Purpose |
