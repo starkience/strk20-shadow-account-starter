@@ -6,7 +6,10 @@ import { RpcProvider, constants, hash } from "starknet";
 import compatibility from "../compatibility.json" with { type: "json" };
 import { loadPublicConfig } from "../src/lib/config";
 import { heading, ok, warn, fail } from "./terminal";
-import { PrivatePaymaster } from "../src/lib/private-paymaster";
+import {
+  PRIVATE_PAYMASTER_FEE_MODE,
+  PrivatePaymaster,
+} from "../src/lib/private-paymaster";
 import { sameAddress } from "../src/lib/shadow-address";
 
 async function main(): Promise<void> {
@@ -23,7 +26,13 @@ async function main(): Promise<void> {
     config.anonymizerAddress,
     compatibility.shadowAccountAnonymizerAddress,
   );
-  ok("configured addresses match compatibility.json");
+  assertExact("private paymaster URL", config.paymasterUrl, compatibility.paymasterUrl);
+  assertExact(
+    "private paymaster fee mode",
+    PRIVATE_PAYMASTER_FEE_MODE,
+    compatibility.paymasterFeeMode,
+  );
+  ok("configured deployment and paymaster pins match compatibility.json");
 
   const provider = new RpcProvider({ nodeUrl: config.rpcUrl });
   const chainId = await provider.getChainId();
@@ -136,9 +145,15 @@ async function main(): Promise<void> {
     );
   }
 
-  const paymasterApiKey = process.env.AVNU_PAYMASTER_API_KEY?.trim();
+  const paymasterApiKey = process.env.AVNU_PAYMASTER_API_KEY?.trim() ?? "";
+  const paymaster = new PrivatePaymaster(config.paymasterUrl, paymasterApiKey);
+  const publicQuote = await paymaster.probePool(config.poolAddress, config.tokenAddress);
+  if (publicQuote && !sameAddress(publicQuote.token, config.tokenAddress)) {
+    throw new Error("Paymaster probe returned a fee in an unexpected token");
+  }
+  ok("private paymaster endpoint accepts the pinned Sepolia pool");
+
   if (paymasterApiKey) {
-    const paymaster = new PrivatePaymaster(config.paymasterUrl, paymasterApiKey);
     const quote = await paymaster.build(config.poolAddress, config.tokenAddress);
     if (quote.fee && !sameAddress(quote.fee.token, config.tokenAddress)) {
       throw new Error("Paymaster returned a fee in an unexpected token");
@@ -164,6 +179,12 @@ function short(value: string): string {
 function assertSame(label: string, actual: string | bigint | number, expected: string): void {
   if (!sameAddress(actual, expected)) {
     throw new Error(`${label} mismatch: expected ${expected}, received ${String(actual)}`);
+  }
+}
+
+function assertExact(label: string, actual: string, expected: string): void {
+  if (actual !== expected) {
+    throw new Error(`${label} mismatch: expected ${expected}, received ${actual}`);
   }
 }
 

@@ -11,7 +11,8 @@ Sepolia services accept a write.
 - Dedicated, deployed Sepolia account with enough public STRK for shielding.
 - A separate recipient address.
 - AVNU private-paymaster API key.
-- The pinned pool, anonymizer, prover, and discovery service passing
+- The pinned pool, anonymizer, prover, discovery service, and Sepolia
+  paymaster endpoint passing
   `pnpm shadow:doctor`.
 
 The current community deployment may be used for an experimental hackathon

@@ -1,6 +1,8 @@
 import { CallData, hash, type Call } from "starknet";
 import { normalizeAddress } from "./shadow-address.js";
 
+export const PRIVATE_PAYMASTER_FEE_MODE = "sponsored_private" as const;
+
 export interface PaymasterFee {
   readonly token: string;
   readonly recipient: string;
@@ -11,7 +13,7 @@ export interface PaymasterBuild {
   readonly parameters: {
     readonly version: "0x1";
     readonly fee_mode: {
-      readonly mode: "sponsored_private";
+      readonly mode: typeof PRIVATE_PAYMASTER_FEE_MODE;
       readonly pool_fee_token: string;
     };
   };
@@ -72,11 +74,29 @@ export class PrivatePaymaster {
     if (!url.startsWith("https://")) throw new Error("AVNU_PAYMASTER_URL must use HTTPS");
   }
 
+  /** Read-only, credential-free check that the endpoint accepts this pool. */
+  async probePool(poolAddress: string, gasToken: string): Promise<PaymasterFee | undefined> {
+    const result = await this.rpc("paymaster_buildTransaction", {
+      transaction: {
+        type: "apply_action",
+        apply_action: { pool_address: normalizeAddress(poolAddress) },
+      },
+      parameters: {
+        version: "0x1",
+        fee_mode: {
+          mode: "default",
+          gas_token: normalizeAddress(gasToken),
+        },
+      },
+    });
+    return parseFee(result.fee_action);
+  }
+
   async build(poolAddress: string, feeToken: string): Promise<PaymasterBuild> {
     const parameters = {
       version: "0x1" as const,
       fee_mode: {
-        mode: "sponsored_private" as const,
+        mode: PRIVATE_PAYMASTER_FEE_MODE,
         pool_fee_token: normalizeAddress(feeToken),
       },
     };
@@ -145,13 +165,14 @@ export class PrivatePaymaster {
   private async rpc(method: string, params: unknown): Promise<Record<string, unknown>> {
     let response: Response;
     try {
+      const headers: Record<string, string> = {
+        accept: "application/json",
+        "content-type": "application/json",
+      };
+      if (this.apiKey) headers["x-paymaster-api-key"] = this.apiKey;
       response = await this.fetchImpl(this.url, {
         method: "POST",
-        headers: {
-          accept: "application/json",
-          "content-type": "application/json",
-          "x-paymaster-api-key": this.apiKey,
-        },
+        headers,
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
         cache: "no-store",
         redirect: "error",

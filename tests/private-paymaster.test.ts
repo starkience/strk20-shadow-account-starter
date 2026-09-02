@@ -63,6 +63,43 @@ test("private paymaster builds a fee action and submits only the pool proof", as
   });
 });
 
+test("paymaster pool probe uses credential-free default mode without changing submission mode", async () => {
+  let request: Record<string, unknown> | undefined;
+  let headers: Headers | undefined;
+  const fakeFetch: typeof fetch = async (_input, init) => {
+    request = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    headers = new Headers(init?.headers);
+    return Response.json({
+      jsonrpc: "2.0",
+      id: 1,
+      result: {
+        fee_action: { type: "withdraw", token: "0xabc", recipient: "0x456", amount: "3" },
+      },
+    });
+  };
+  const paymaster = new PrivatePaymaster("https://paymaster.example", "", fakeFetch);
+
+  const fee = await paymaster.probePool("0x123", "0xabc");
+
+  assert.equal(fee?.amount, 3n);
+  assert.equal(headers?.has("x-paymaster-api-key"), false);
+  assert.deepEqual(request, {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "paymaster_buildTransaction",
+    params: {
+      transaction: {
+        type: "apply_action",
+        apply_action: { pool_address: "0x123" },
+      },
+      parameters: {
+        version: "0x1",
+        fee_mode: { mode: "default", gas_token: "0xabc" },
+      },
+    },
+  });
+});
+
 test("private paymaster never reflects a remote error message containing secrets", async () => {
   const secret = "do-not-reflect-this-api-key";
   const fakeFetch: typeof fetch = async () => Response.json(
