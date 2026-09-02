@@ -241,9 +241,9 @@ not used by the pinned runtime; see [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 - OHTTP proving and discovery transport probes: passing on 2026-09-02.
 - Starter-owned immutable deployment: passing. The verified class was deployed
   at block `14438394` and permanently finalized at block `14438419`.
-- Fresh credentialed shield → mature note → relayed shadow invoke: implemented;
-  final write evidence still requires public Sepolia STRK in the dedicated E2E
-  account. It must not be marked passing until that job produces a transaction
-  hash satisfying every assertion above.
+- Fresh credentialed shield → mature note → relayed shadow invoke: passing on
+  2026-09-02. The accepted
+  [transaction](https://sepolia.voyager.online/tx/0x07e2a81742562aad7d5eeef460ba0a6c669b2aa08a51a4db821c3cafa3c2ecd8)
+  satisfies every assertion above; see [`docs/E2E.md`](docs/E2E.md).
 
 Prototype, unaudited, testnet only.
