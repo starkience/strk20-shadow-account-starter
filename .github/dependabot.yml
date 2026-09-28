@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      wallet-api-stack:
+        patterns:
+          - starknet
+          - "@starknet-io/*"
+      frontend-tooling:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react*"
+          - vite
+          - vitest
+          - typescript
+          - "@vitejs/*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

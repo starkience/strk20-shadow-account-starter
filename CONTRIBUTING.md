@@ -1,14 +1,9 @@
 # Contributing
 
-Keep the first path small and reproducible.
-
-- Node 24 and pnpm are required.
-- Never commit `.env`, signing keys, viewing keys, proofs, or paymaster keys.
-- Do not add a second network or token without a live E2E fixture.
-- Do not change pinned SDK/anonymizer versions independently.
-- Do not submit private operations from the root account.
-- Run `pnpm build`, `pnpm check`, and `pnpm shadow:doctor` before opening a pull
-  request. Packaging changes must also pass an isolated `pnpm pack` install.
-- Do not mark a live E2E passing without every assertion in `docs/E2E.md`.
-
-Changes to privacy claims must update both the README and the workbench copy.
+- Use Node 24.21 and pnpm 12.7.0.
+- Keep dependencies pinned exactly; update the Wallet API packages as one tested row.
+- Do not add signing keys, viewing keys, prover credentials, paymaster credentials, or an anonymizer deployment flow.
+- Keep `strk20Balances` behind an explicit user action.
+- Add deterministic tests for action order, amount handling, address resolution, and version detection.
+- Run `pnpm check` and `pnpm verify:contracts` before opening a pull request.
+- A live wallet E2E claim requires successful Ready and Xverse runs on the stated network, with transaction links recorded in the PR.

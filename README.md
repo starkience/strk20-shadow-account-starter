@@ -1,154 +1,181 @@
 # STRK20 Shadow Account Starter
 
-Run Starknet contract calls from STRK20 shadow accounts on Sepolia.
+A minimal browser dapp for using STRK20 shadow accounts through `WalletAccountV6`.
 
-This starter is for a trusted Node.js backend that controls a dedicated test
-account. It handles private-note discovery, maturity, remote proving through
-Starkscan, shadow-address derivation, AVNU private-paymaster submission, and
-onchain verification.
+The wallet keeps the signing key, viewing key, notes, proof generation, and transaction submission. The dapp supplies native `STRK20_ACTION[]`. There is no backend, bundled Privacy SDK, prover key, paymaster key, or app-specific anonymizer deployment.
 
-> Hackathon preview: experimental, unaudited, and Sepolia only. Do not use
-> production keys or funds.
+## Run it
 
-## Compatibility
+Requirements:
 
-Use this starter when you have:
-
-- Node.js 24 or newer;
-- a funded, deployed Sepolia account controlled by one private key; and
-- Starkscan prover and AVNU private-paymaster API keys.
-
-It does not support guardian or multisig signing, mainnet, or private funding in
-tokens other than STRK. A browser dapp must not collect user keys; use
-wallet-provided shadow-account support when it becomes available.
-
-## Run the demo
+- Node.js 24.21;
+- pnpm 12.7.0;
+- Ready or Xverse with Wallet API 0.10.4 support; and
+- shielded STRK prepared in the wallet.
 
 ```bash
-git clone https://github.com/starkience/strk20-shadow-account-starter.git
-cd strk20-shadow-account-starter
 corepack enable
+corepack prepare pnpm@12.7.0 --activate
 pnpm install
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-Set these values in `.env`:
-
-```dotenv
-ACCOUNT_ADDRESS=0x...
-ACCOUNT_PRIVATE_KEY=0x...
-STARKSCAN_API_KEY=...
-AVNU_PAYMASTER_API_KEY=...
-```
-
-Use a dedicated test account and keep `.env` private. Each team supplies its
-own service credentials; none are bundled with the starter. The Sepolia RPC,
-contracts, and service URLs are already pinned.
+Change `VITE_SHADOW_DAPP_NAME` in `.env.local` before running the app. It must be a unique, stable Cairo short string of at most 31 ASCII characters. Do not ship the example value: the dapp name scopes the user's persistent shadow identity, and two apps reusing it reuse the same namespace.
 
 ```bash
-pnpm shadow:doctor
-pnpm shadow:demo --recipient 0x...
+pnpm dev
 ```
 
-`shadow:doctor` checks the pinned Sepolia stack without spending a proof or
-writing onchain. `shadow:demo` sends an asynchronous proof job through
-Starkscan, then privately invokes a STRK transfer. Use a recipient different
-from the root account. If private STRK is unavailable, the demo first performs
-the public shield transaction and waits until the note is usable.
+The workbench intentionally does only two protocol-neutral operations:
 
-For the local workbench, run `pnpm dev --recipient 0x...` and open
-[127.0.0.1:3000](http://127.0.0.1:3000). Keys stay in the Node process.
+1. Move shielded STRK into the dapp-scoped shadow account.
+2. Collect the shadow account's public STRK balance back into a shielded open note.
 
-## Add it to a project
+Shielding is separate and happens in the wallet. The dapp reads the shielded balance only when the user clicks **Read with consent**.
 
-The package is not published. Build a local tarball and install it in the
-integrating project:
+## Current tested row
 
-```bash
-# In this repository
-pnpm build
-pnpm pack
+Verified on 2026-09-29.
 
-# In the integrating project
-pnpm add /path/to/strk20-shadow-account-starter-0.1.0.tgz
-```
+| Component | Version |
+| --- | --- |
+| starknet.js | `10.8.0` |
+| Starknet Wallet API / types-js | `0.10.4` |
+| get-starknet discovery | `6.0.6` |
+| get-starknet wallet standard | `6.0.6` |
+| React | `19.3.0` |
+| Vite | `8.3.1` |
+| TypeScript | `7.0.2` |
+| Node.js LTS | `24.21.0` |
+| pnpm | `12.7.0` |
 
-The tarball includes the pinned SDK and needs no StarkWare package-registry
-credentials.
+Dependencies are exact pins. Update the four Starknet/Wallet API packages as one compatibility row and retest both supported wallets.
+
+## The integration, without the UI
+
+### 1. Connect and check capability
 
 ```ts
-import { createShadowAccount } from "strk20-shadow-account-starter";
+import { WalletAccountV6, walletV6 } from 'starknet';
 
-const shadow = createShadowAccount({
-  appName: "my-game",
-  nonce: 0n,
-});
+const versions = await walletV6.supportedWalletApi(wallet);
+if (!versions.includes('0.10.4')) {
+  throw new Error('Shadow accounts are not supported');
+}
 
-const result = await shadow.invoke({
-  calls: [
-    {
-      contractAddress: GAME_ADDRESS,
-      entrypoint: "join",
-      calldata: [ROUND_ID],
-    },
-  ],
-  fundingAmount: 0n,
-  collectRemainder: false,
-  verifyEffect: async ({ provider, shadowAddress }) => {
-    const value = await provider.callContract({
-      contractAddress: GAME_ADDRESS,
-      entrypoint: "is_member",
-      calldata: [shadowAddress],
-    });
-    if (value[0] !== "0x1") throw new Error("Shadow call had no effect");
-  },
-});
-
-console.log(result.shadowAddress, result.transactionHash);
+const account = await WalletAccountV6.connect({ nodeUrl: RPC_URL }, wallet);
 ```
 
-If the account has no private STRK, call `shadow.shield(...)` once and wait for
-its returned `readyAtHeadBlock` before invoking. Shielding is public; do not run
-it automatically for every application request.
+Use `wallet_supportedWalletApi` for capability detection. Do not probe `strk20Balances`; that asks the user to reveal private financial data.
 
-See [the integration guide](docs/INTEGRATION.md) for shielding, identity and
-nonce policy, concurrency, safe errors, and backend API design. Normal builders
-do not configure infrastructure; maintainer-only escape hatches are documented
-separately in [advanced configuration](docs/CONFIGURATION.md).
+### 2. Resolve the shadow address when you need to fund it
 
-## Rules that integrations must keep
+A `shadow_account_invoke` is self-contained when its calls need no pre-funding. A DeFi deposit usually needs the address because the first action withdraws shielded tokens to it.
 
-- Keep signing keys, viewing keys, and both service API keys on the trusted server.
-- Submit shadow invocations only through the private paymaster.
-- Keep amounts as `bigint` from parsing through calldata.
-- Build calls from validated application inputs; do not expose an arbitrary
-  unauthenticated relay.
-- Add a target-specific `verifyEffect` check before claiming end-to-end success.
-- Reusing `appName + nonce` reuses a publicly linkable shadow address.
+```ts
+const partial = await account.strk20ShadowAccountCommitment(DAPP_NAME);
+const result = await provider.callContract({
+  contractAddress: CANONICAL_ANONYMIZER,
+  entrypoint: 'get_shadow_accounts',
+  calldata: [partial, '0x0', '0x1', '0x0'],
+});
+const shadowAddress = result[2];
+```
+
+This asks the wallet for one partial, dapp-scoped commitment. Cache the result for the connected wallet session and clear it on account or network changes.
+
+### 3. Submit native STRK20 actions
+
+```ts
+import type { STRK20_ACTION } from 'starknet';
+
+const actions: STRK20_ACTION[] = [
+  {
+    type: 'withdraw',
+    token: STRK,
+    amount,
+    recipient: shadowAddress,
+  },
+  {
+    type: 'shadow_account_invoke',
+    dapp_name: DAPP_NAME,
+    nonce: '0x0',
+    calls: [approveCall, vaultDepositCall],
+    collect_policy: { type: 'exact', amount: '0x0' },
+  },
+];
+
+const { transaction_hash } = await account.strk20InvokeTransaction(actions);
+```
+
+For a withdrawal that returns an unknown output amount to the pool, create the open note first and collect only the interaction's balance increase:
+
+```ts
+const actions: STRK20_ACTION[] = [
+  { type: 'transfer', token: STRK, amount: 'OPEN', recipient: account.address },
+  {
+    type: 'shadow_account_invoke',
+    dapp_name: DAPP_NAME,
+    nonce: '0x0',
+    calls: [vaultRedeemCall],
+    collect_policy: { type: 'diff' },
+  },
+];
+```
+
+The repository keeps these actions visible in [`src/shadow-account.ts`](src/shadow-account.ts); it does not wrap Starknet.js in another client SDK.
+
+## Canonical infrastructure
+
+| Network | Privacy pool | ShadowAccountAnonymizer |
+| --- | --- | --- |
+| Mainnet | `0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a` | `0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7` |
+| Sepolia | `0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91` | `0x010a2285310c107c731d997afc147afb7495daff6397c2d242133d9fe8d9b147` |
+
+Every app uses the canonical `ShadowAccountAnonymizer`. It is generic infrastructure that deploys and drives a user's dapp-scoped shadow account. A Vesu, Troves, or other protocol integration supplies ordinary contract calls; it does not deploy a protocol-specific shadow anonymizer.
+
+`pnpm verify:contracts` checks both live networks for the expected pool binding, anonymizer and shadow classes, delegated screening policy, and a positive pool fee. A scheduled GitHub workflow runs the same check daily.
 
 ## Privacy boundary
 
-The private invocation hides the funding notes and keeps the root account from
-being the target contract's caller or the outer transaction sender. The shadow
-address, its calls, target, amounts, application state, and timing remain
-public. The initial shield transaction also exposes the root account, token,
-amount, and timing. The configured prover and discovery services process the
-private requests sent to them. This is not an anonymity guarantee.
+A shadow account is a persistent public pseudonym, not a shielded account:
 
-## Release status
+| Hidden by the protocol flow | Public onchain |
+| --- | --- |
+| Direct link to the controlling wallet | Shadow address and deployment |
+| Ownership of the input shielded notes | Shadow token balances |
+| Wallet as transaction sender | Target protocols and calls |
+| Viewing key and note state | Amounts, state changes, and timing |
 
-Ready for Sepolia hackathon use within the compatibility boundary above:
+Applications and wallets know which connected session requested the operation. RPC, relayer, prover, screening, and timing observations are additional trust and correlation boundaries. Do not market shadow accounts as untraceable.
 
-- clean install and deterministic checks pass without StarkWare registry access;
-- the SDK, contracts, addresses, class hashes, services, and compiler are pinned;
-- Starkscan submission, idempotency, polling, result, and delivery-uncertainty
-  behavior is covered by deterministic tests;
-- the starter-owned anonymizer is permanently finalized; and
-- the six-assertion Sepolia shadow-account gate passed on
-  2026-09-02: [workflow run](https://github.com/starkience/strk20-shadow-account-starter/actions/runs/33630618461),
-  [invocation transaction](https://sepolia.voyager.online/tx/0x07e2a81742562aad7d5eeef460ba0a6c669b2aa08a51a4db821c3cafa3c2ecd8).
+## Commands
 
-The runtime uses pinned StarkWare Privacy SDK source and live services. It does
-not depend on Kamal's repository; his community research helped identify a live
-version boundary. See [provenance](docs/PROVENANCE.md), the exact
-[E2E assertions](docs/E2E.md), and [upgrade rules](docs/UPGRADING.md).
+```bash
+pnpm typecheck          # strict TypeScript
+pnpm test               # deterministic unit tests
+pnpm build              # production Vite build
+pnpm check              # all deterministic checks
+pnpm verify:contracts   # live Mainnet + Sepolia infrastructure checks
+```
+
+## Production checklist
+
+- Replace the example dapp name and keep it stable across releases.
+- Listen for wallet account/network changes and clear cached commitments.
+- Keep private-balance reads behind explicit consent.
+- Preserve the transaction link when confirmation polling times out.
+- Test first use, repeated use, insufficient shielded funds, rejection, and delayed proof generation.
+- Test Ready and Xverse separately on the target network.
+- Run the live contract verifier immediately before a release.
+- Explain that the position and activity of the shadow account are public.
+
+## Upstream references
+
+- [Starknet.js WalletAccountV6 and STRK20 shadow accounts](https://github.com/starknet-io/starknet.js/blob/develop/www/docs/guides/account/walletAccount.md#strk20-shadow-accounts)
+- [ShadowAccountAnonymizer](https://github.com/starkware-libs/starknet-privacy/tree/main/packages/shadow_account_anonymizer)
+- [Starknet Wallet API specification](https://github.com/starkware-libs/starknet-specs/tree/master/wallet-api)
+
+## Migration from the pre-Wallet-API starter
+
+Version `0.1.0` was a Sepolia-only backend reference that held a dedicated account key and directly operated the Privacy SDK, Starkscan prover, AVNU private paymaster, and a starter-owned anonymizer. That architecture remains relevant to wallets and key-holding services, but it is not the recommended boundary for a connected-wallet dapp. Version `1.0.0` removes it from the default path.

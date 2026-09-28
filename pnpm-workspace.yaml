@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+
+autoDedupe: true
+nodeVersion: 24.21.0

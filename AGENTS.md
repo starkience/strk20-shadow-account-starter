@@ -1,12 +1,11 @@
 # Repository instructions
 
-- This repository is standalone STRK20 shadow-account infrastructure. Keep it
-  independent from unrelated cross-chain products and application-specific dependencies.
-- Preserve the SDK-controlled, Sepolia-only scope unless a user explicitly
-  requests expansion.
-- Never expose signing or viewing keys to `public/` or API responses.
-- Never replace private-paymaster submission with root `account.execute` for a
-  shadow invocation.
-- Keep amounts as bigint from parsing through calldata.
-- A live E2E claim requires every assertion documented in `docs/E2E.md`.
-- Use exact dependency, address, and class-hash pins.
+- This is a browser dapp starter for STRK20 shadow accounts through the Starknet Wallet API.
+- Keep the integration on `WalletAccountV6`; never request, store, or derive signing or viewing keys.
+- Use the canonical shadow-account anonymizer for each supported network. Do not deploy an app-specific copy.
+- Keep integration examples close to native `STRK20_ACTION[]`; do not add a second SDK abstraction.
+- Never use `strk20Balances` as a capability probe. It requires explicit user consent.
+- A fork must configure a unique, stable `VITE_SHADOW_DAPP_NAME` before transactions are enabled.
+- Keep token amounts as bigint or base-unit strings. Never route them through JavaScript `number`.
+- State the privacy boundary accurately: shadow activity is public; the main-wallet link is hidden by the protocol flow.
+- Pin all Wallet API packages exactly and run `pnpm check` plus `pnpm verify:contracts` before release.
