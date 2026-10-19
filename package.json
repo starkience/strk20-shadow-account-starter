@@ -28,16 +28,16 @@
     "@starknet-io/get-starknet-discovery": "6.0.6",
     "@starknet-io/get-starknet-wallet-standard": "6.0.6",
     "@starknet-io/types-js": "0.10.4",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "starknet": "10.8.0"
   },
   "devDependencies": {
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@vitejs/plugin-react": "6.1.1",
+    "@vitejs/plugin-react": "6.1.2",
     "typescript": "7.0.2",
-    "vite": "8.3.1",
-    "vitest": "5.0.2"
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
   }
 }
