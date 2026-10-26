@@ -173,11 +173,11 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@starknet-io/get-starknet-discovery':
-        specifier: 6.0.6
-        version: 6.0.6(typescript@7.0.2)
+        specifier: 6.1.1
+        version: 6.1.1(typescript@7.0.2)
       '@starknet-io/get-starknet-wallet-standard':
-        specifier: 6.0.6
-        version: 6.0.6(typescript@7.0.2)
+        specifier: 6.1.1
+        version: 6.1.1(typescript@7.0.2)
       '@starknet-io/types-js':
         specifier: 0.10.4
         version: 0.10.4
@@ -570,17 +570,20 @@ packages:
   '@scure/starknet@1.1.0':
     resolution: {integrity: sha512-83g3M6Ix2qRsPN4wqLDqiRZ2GBNbjVWfboJE/9UjfG+MHr6oDSu/CWgy8hsBSJejr09DkkL+l0Ze4KVrlCIdtQ==}
 
-  '@starknet-io/get-starknet-discovery@6.0.6':
-    resolution: {integrity: sha512-IymEWRmi0096vaqX0IK7pmKdJvIYbWJ50iJl9U7e5A9G1285RGgeeAuBfJUaUQeEFmD3Yu3Lck2hBPOjnVPLRA==}
+  '@starknet-io/get-starknet-discovery@6.1.1':
+    resolution: {integrity: sha512-5PJL8GYQHxFg495Ij5CeeVwJIvaabXM4/woE2S5RA20aJjlFnVlaDXUVPP28wih/6GvqgRvT/Dwvti8/F3wNsw==}
 
-  '@starknet-io/get-starknet-virtual-wallet@6.0.6':
-    resolution: {integrity: sha512-5pI5wowIqBaY3bbNRkTbzQN2wtAjSkQyTJ7EzdXUMRx3qRPKTmUQnXZml4baTKJfDKQ9Ux/iReWq+cSY9ItgIA==}
+  '@starknet-io/get-starknet-virtual-wallet@6.1.1':
+    resolution: {integrity: sha512-nDpYNxjCDKOe7U85vhrTnDzAec/Nog1wyL1lvkOpL3jgfvCPte/xek/6DNZVfNy1pVJUsJ/dA4M1qPc2EPBDmg==}
 
   '@starknet-io/get-starknet-wallet-standard@5.0.0':
     resolution: {integrity: sha512-isDNGDlp16W24HE4IuweYXLDRZN0JbsDnazAieeKXE87Mn+jqhsjgTsMxcwWTjX7v906Bjz39FiDjGUddnr36g==}
 
   '@starknet-io/get-starknet-wallet-standard@6.0.6':
     resolution: {integrity: sha512-iBS7zwBP5l7yKxM/1INOBzqB82KSgYqmLPrBlgNs/uYNJyCj+ZL7yTVuUyv1174Y33yztN5Lvwxppsiyxg1+Uw==}
+
+  '@starknet-io/get-starknet-wallet-standard@6.1.1':
+    resolution: {integrity: sha512-+rE/uhFPxlhPHOO2NQ4xtv8eSn+BZuRbdMPToWgkkIWkLMhYNTkKsamshPkybQBsaoZ0A8vMMZFeuK7EmjwGDQ==}
 
   '@starknet-io/types-js@0.10.2':
     resolution: {integrity: sha512-AtUFPYdmo9DqVus++aBSoY9W13/2PZmillPr8/mXZjc+V0iYJ/QTmkTsbw+es2mnLeLhYWSymW9ivQzyyyKdog==}
@@ -1420,19 +1423,19 @@ snapshots:
       '@noble/curves': 1.7.0
       '@noble/hashes': 1.6.1
 
-  '@starknet-io/get-starknet-discovery@6.0.6(typescript@7.0.2)':
+  '@starknet-io/get-starknet-discovery@6.1.1(typescript@7.0.2)':
     dependencies:
-      '@starknet-io/get-starknet-virtual-wallet': 6.0.6(typescript@7.0.2)
-      '@starknet-io/get-starknet-wallet-standard': 6.0.6(typescript@7.0.2)
+      '@starknet-io/get-starknet-virtual-wallet': 6.1.1(typescript@7.0.2)
+      '@starknet-io/get-starknet-wallet-standard': 6.1.1(typescript@7.0.2)
       '@starknet-io/types-js': 0.10.4
       '@wallet-standard/base': 1.1.1
     transitivePeerDependencies:
       - typescript
 
-  '@starknet-io/get-starknet-virtual-wallet@6.0.6(typescript@7.0.2)':
+  '@starknet-io/get-starknet-virtual-wallet@6.1.1(typescript@7.0.2)':
     dependencies:
       '@module-federation/runtime': 0.12.0
-      '@starknet-io/get-starknet-wallet-standard': 6.0.6(typescript@7.0.2)
+      '@starknet-io/get-starknet-wallet-standard': 6.1.1(typescript@7.0.2)
       '@starknet-io/types-js': 0.10.4
       '@wallet-standard/base': 1.1.1
       '@wallet-standard/features': 1.1.1
@@ -1451,6 +1454,15 @@ snapshots:
       - zod
 
   '@starknet-io/get-starknet-wallet-standard@6.0.6(typescript@7.0.2)':
+    dependencies:
+      '@starknet-io/types-js': 0.10.4
+      '@wallet-standard/base': 1.1.1
+      '@wallet-standard/features': 1.1.1
+      ox: 1.8.1(typescript@7.0.2)
+    transitivePeerDependencies:
+      - typescript
+
+  '@starknet-io/get-starknet-wallet-standard@6.1.1(typescript@7.0.2)':
     dependencies:
       '@starknet-io/types-js': 0.10.4
       '@wallet-standard/base': 1.1.1
